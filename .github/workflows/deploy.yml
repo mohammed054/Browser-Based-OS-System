@@ -1,10 +1,12 @@
-name: Deploy to GitHub Pages
+name: Deploy Portfolio to GitHub Pages
 
+# Trigger the workflow on pushes to main
 on:
   push:
-    branches: ["main"]
-  workflow_dispatch:
+    branches:
+      - main
 
+# Give the workflow the correct permissions
 permissions:
   contents: read
   pages: write
@@ -13,27 +15,28 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
+    # REQUIRED: GitHub Pages environment
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
     steps:
-      - uses: actions/checkout@v4
+      # Step 1: Checkout your repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
+      # Step 2: Configure Pages
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v5
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build
-        run: npm run build
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload artifact
+      # Step 3: Upload your portfolio as an artifact
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./dist
+          path: .  # <-- uploads all files in repo
 
-      - name: Deploy
+      # Step 4: Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4
