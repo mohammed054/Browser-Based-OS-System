@@ -1,28 +1,21 @@
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
 
+// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
-  base: '/Browser-Based-OS-System/',  // this must match your repository name
+  base: '/portfolio/',  // ⚡ Important: your repo name
+
   build: {
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          // Split vendor chunks
-          vendor: ['react', 'react-dom'],
-          // Group components into chunks
-          apps: ['./src/components/Calculator', './src/components/Terminal', './src/components/Chrome', './src/components/Settings', './src/components/FileExplorer', './src/components/TrashBin', './src/components/Notes']
-        }
-      }
-    },
-    // Enable source maps for debugging but minimize for production
-    sourcemap: false,
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true
-      }
-    }
-  }
+    outDir: 'dist',      // default, your build folder
+    emptyOutDir: true,   // clear old builds automatically
+  },
+
+  server: {
+    open: true,          // opens browser on dev
+    port: 3000,
+  },
+
+  // Optional: add plugins here if needed
+  plugins: [
+    // e.g., for PWA support, React, etc.
+  ]
 })
