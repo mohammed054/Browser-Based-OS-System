@@ -1,12 +1,10 @@
 name: Deploy Portfolio to GitHub Pages
 
-# Trigger the workflow on pushes to main
 on:
   push:
     branches:
       - main
 
-# Give the workflow the correct permissions
 permissions:
   contents: read
   pages: write
@@ -15,28 +13,33 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
-    # REQUIRED: GitHub Pages environment
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      # Step 1: Checkout your repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Configure Pages
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Vite portfolio
+        run: npm run build
+
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v5
 
-      # Step 3: Upload your portfolio as an artifact
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .  # <-- uploads all files in repo
+          path: dist   # deploy the built site, not src
 
-      # Step 4: Deploy to GitHub Pages
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
