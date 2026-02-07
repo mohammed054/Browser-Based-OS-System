@@ -1,0 +1,33 @@
+{
+  "name": "Browser-Based OS System",
+  "short_name": "Browser OS",
+  "description": "A fully functional browser-based operating system with desktop interface",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1c1c1c",
+  "theme_color": "#1c1c1c",
+  "orientation": "landscape-primary",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/Browser-Based-OS-System/images/logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/Browser-Based-OS-System/images/logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/Browser-Based-OS-System/images/wallpaper.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ]
+}
