@@ -1,8 +1,9 @@
 import './style.css'
 import { useState, useCallback, Suspense, lazy } from 'react'
-import Desktop from './components/Desktop'
-import Taskbar from './components/Taskbar'
+import Desktop from './components/UI/Desktop'
+import Taskbar from './components/UI/Taskbar'
 import ErrorBoundary from './components/ErrorBoundary'
+import Hero from './components/UI/Hero'
 
 // Lazy load components for better performance
 const WindowFrame = lazy(() => import('./components/WindowFrame'))
@@ -15,6 +16,8 @@ const TrashBin = lazy(() => import('./components/TrashBin'))
 const Notes = lazy(() => import('./components/Notes'))
 
 function App() {
+  const [showHero, setShowHero] = useState(true);
+  
   // Calculate initial icon positions with column wrapping
   const getInitialIconPositions = () => {
     const icons = [
@@ -75,6 +78,10 @@ function App() {
     }
   ])
   const [desktopIcons, setDesktopIcons] = useState(getInitialIconPositions())
+
+  const handleStartOS = () => {
+    setShowHero(false);
+  };
 
   const openWindow = (appType) => {
     // For Notes, allow multiple windows
@@ -395,6 +402,10 @@ function App() {
     ...window,
     children: renderComponent(window)
   }));
+
+  if (showHero) {
+    return <Hero onStart={handleStartOS} />;
+  }
 
   return (
     <>
