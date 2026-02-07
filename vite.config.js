@@ -1,21 +1,11 @@
 import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 
-// https://vitejs.dev/config/
 export default defineConfig({
-  base: '/portfolio/',  // ⚡ Important: your repo name
-
+  base: '/portfolio/', // ⚡ GitHub Pages repo name
+  plugins: [react()],
   build: {
-    outDir: 'dist',      // default, your build folder
-    emptyOutDir: true,   // clear old builds automatically
-  },
-
-  server: {
-    open: true,          // opens browser on dev
-    port: 3000,
-  },
-
-  // Optional: add plugins here if needed
-  plugins: [
-    // e.g., for PWA support, React, etc.
-  ]
+    outDir: 'dist',
+    emptyOutDir: true
+  }
 })

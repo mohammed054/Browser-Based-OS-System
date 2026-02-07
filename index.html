@@ -1,37 +1,30 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/images/logo.png" />
-    <link rel="manifest" href="/manifest.json" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Browser-Based OS System</title>
-    <meta name="description" content="A fully functional browser-based operating system with desktop interface, featuring Calculator, Terminal, Chrome browser, File Explorer, Notes, and Settings applications." />
-    <meta name="keywords" content="browser OS, desktop interface, web applications, calculator, terminal, browser, file explorer, notes, settings" />
-    <meta name="author" content="Browser-Based OS System" />
 
-    <!-- PWA Meta Tags -->
+    <!-- Manifest -->
+    <link rel="manifest" href="./manifest.json" />
+
+    <!-- Favicon -->
+    <link rel="icon" href="./images/logo-192.png" />
+
+    <!-- Meta theme color -->
     <meta name="theme-color" content="#1c1c1c" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Browser OS" />
-    <link rel="apple-touch-icon" href="/images/logo.png" />
 
-    <!-- Open Graph Meta Tags -->
-    <meta property="og:title" content="Browser-Based OS System" />
-    <meta property="og:description" content="A fully functional browser-based operating system with desktop interface" />
-    <meta property="og:image" content="/images/logo.png" />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://github.com/mohammed054/Browser-Based-OS-System" />
-
-    <!-- Twitter Card Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Browser-Based OS System" />
-    <meta name="twitter:description" content="A fully functional browser-based operating system with desktop interface" />
-    <meta name="twitter:image" content="/images/logo.png" />
+    <!-- Optional CSS (if you have global styles) -->
+    <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
+    <!-- React root -->
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+
+    <!-- JS Bundle built by Vite -->
+    <script type="module" src="./src/main.jsx"></script>
+
+    <!-- Optional: fallback for older browsers -->
+    <script nomodule src="./src/main-legacy.js"></script>
   </body>
 </html>
