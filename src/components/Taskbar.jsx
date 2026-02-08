@@ -132,14 +132,46 @@ const Taskbar = ({ openWindow, windows, activeWindowId, addNotification }) => {
       }
     };
 
+    const handleToggleSound = () => {
+      // Toggle sound on/off
+      if (typeof window !== 'undefined' && window.soundManager) {
+        if (soundVolume > 0) {
+          setSoundVolume(0);
+          window.soundManager.disable();
+        } else {
+          setSoundVolume(0.5);
+          window.soundManager.enable();
+          window.soundManager.setVolume(0.5);
+        }
+      }
+      // Play click sound
+      window.soundManager.play('click');
+    };
+
+    const handleVolumeSliderClick = (e) => {
+      e.stopPropagation(); // Prevent toggle when adjusting volume
+      const newVolume = parseFloat(e.target.value);
+      setSoundVolume(newVolume);
+      if (typeof window !== 'undefined' && window.soundManager) {
+        if (newVolume === 0) {
+          window.soundManager.disable();
+        } else {
+          window.soundManager.enable();
+          window.soundManager.setVolume(newVolume);
+        }
+      }
+    };
+
     document.addEventListener('open-start-menu', handleOpenStartMenu);
     document.addEventListener('escape-pressed', handleCloseMenus);
+    document.addEventListener('toggle-sound', handleToggleSound);
     
     return () => {
       document.removeEventListener('open-start-menu', handleOpenStartMenu);
       document.removeEventListener('escape-pressed', handleCloseMenus);
+      document.removeEventListener('toggle-sound', handleToggleSound);
     };
-  }, [isStartMenuOpen]);
+  }, [isStartMenuOpen, soundVolume]);
 
   return (
     <>
@@ -221,21 +253,8 @@ const Taskbar = ({ openWindow, windows, activeWindowId, addNotification }) => {
               cursor: 'pointer'
             }}
             title={`Sound Effects Volume: ${Math.round(soundVolume * 100)}%`}
-            onClick={() => {
-              // Toggle sound on/off
-              if (typeof window !== 'undefined' && window.soundManager) {
-                if (soundVolume > 0) {
-                  setSoundVolume(0);
-                  window.soundManager.disable();
-                } else {
-                  setSoundVolume(0.5);
-                  window.soundManager.enable();
-                  window.soundManager.setVolume(0.5);
-                }
-                // Play click sound
-                window.soundManager.play('click');
-              }
-            }}
+              onClick={handleToggleSound}
+            title={`Sound Effects Volume: ${Math.round(soundVolume * 100)}%`}
           >
             <span style={{ 
               fontSize: '16px', 
@@ -251,18 +270,7 @@ const Taskbar = ({ openWindow, windows, activeWindowId, addNotification }) => {
               max="1"
               step="0.1"
               value={soundVolume}
-              onChange={(e) => {
-                const newVolume = parseFloat(e.target.value);
-                setSoundVolume(newVolume);
-                if (typeof window !== 'undefined' && window.soundManager) {
-                  if (newVolume === 0) {
-                    window.soundManager.disable();
-                  } else {
-                    window.soundManager.enable();
-                    window.soundManager.setVolume(newVolume);
-                  }
-                }
-              }}
+              onChange={handleVolumeSliderClick}
               onClick={(e) => e.stopPropagation()} // Prevent toggle when adjusting volume
               style={{
                 width: '60px',
@@ -281,7 +289,7 @@ const Taskbar = ({ openWindow, windows, activeWindowId, addNotification }) => {
             }}>
               🔊
             </span>
-            <input
+              <input
               type="range"
               min="0"
               max="1"
@@ -300,6 +308,7 @@ const Taskbar = ({ openWindow, windows, activeWindowId, addNotification }) => {
                 background: 'transparent',
                 outline: 'none'
               }}
+            />
             />
           </div>
         </div>
