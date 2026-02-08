@@ -8,6 +8,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import Hero from './components/UI/Hero'
 import { keyboardManager } from './utils/KeyboardManager'
 import CustomCursor from './components/CustomCursor'
+import { soundManager } from './utils/SoundManager'
 import { MobileFallback, SimplifiedPortfolio } from './components/MobileFallback'
 
 // Lazy load components for better performance
@@ -34,12 +35,12 @@ function App() {
   // Phase 3 State Management
   const [notifications, setNotifications] = useState([]);
   const [isLocked, setIsLocked] = useState(false);
-  const [language, setLanguage] = useState('en');
+  // const [language, setLanguage] = useState('en'); // Future: Multi-language support
   
   // Phase 5 Mobile State
   const [showMobileFallback, setShowMobileFallback] = useState(false);
   const [showSimplified, setShowSimplified] = useState(false);
-  const [mobileWarningAcknowledged, setMobileWarningAcknowledged] = useState(false);
+  // const [mobileWarningAcknowledged, setMobileWarningAcknowledged] = useState(false); // Future: Better mobile handling
   
   // Lock screen time
   const [currentTime, setCurrentTime] = useState('');
@@ -141,6 +142,15 @@ const icons = [
   
   // Phase 5 Loading states
   const [loadingWindows, setLoadingWindows] = useState(new Set());
+  
+  // Initialize sound manager
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.soundManager = soundManager;
+      // Set initial volume
+      soundManager.setVolume(soundVolume);
+    }
+  }, [soundVolume]);
 
   const handleStartOS = () => {
     setShowHero(false);
@@ -150,6 +160,11 @@ const icons = [
     // Phase 5: Check if already loading
     if (loadingWindows.has(appType)) {
       return; // Prevent duplicate launches
+    }
+
+    // Phase 5: Play window open sound
+    if (typeof window !== 'undefined' && window.soundManager) {
+      window.soundManager.play('windowOpen');
     }
 
     // For Notes, allow multiple windows
@@ -333,6 +348,11 @@ const getComponent = (appType) => {
   }
 
   const closeWindow = (id) => {
+    // Phase 5: Play window close sound
+    if (typeof window !== 'undefined' && window.soundManager) {
+      window.soundManager.play('windowClose');
+    }
+
     setWindows(prev => prev.filter(w => w.id !== id))
     if (activeWindowId === id) {
       setActiveWindowId(null)

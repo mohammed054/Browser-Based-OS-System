@@ -179,13 +179,18 @@ class KeyboardManager {
         try {
           shortcut.action(event);
           
-          // Emit shortcut triggered event
-          this.emit('shortcut-triggered', {
-            id: shortcut.id,
-            context: this.activeContext,
-            keys: keyCombo,
-            event
-          });
+      // Emit shortcut triggered event
+      this.emit('shortcut-triggered', {
+        id: shortcut.id,
+        context: this.activeContext,
+        keys: keyCombo,
+        event
+      });
+
+      // Play sound effect
+      if (typeof window !== 'undefined' && window.soundManager) {
+        window.soundManager.play('click');
+      }
           
           return;
         } catch (error) {
@@ -270,7 +275,12 @@ class KeyboardManager {
     }
     this.eventListeners.get(event).add(callback);
     
-    return () => this.eventListeners.get(event)?.delete(callback);
+    return () => {
+      const listeners = this.eventListeners.get(event);
+      if (listeners) {
+        listeners.delete(callback);
+      }
+    };
   }
 
   emit(event, data) {

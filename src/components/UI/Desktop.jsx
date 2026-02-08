@@ -231,13 +231,19 @@ const Desktop = ({
         setSecretWindowVisible(true);
         setDoubleClickCount(0);
         
+        // Play success sound
+        if (typeof window !== 'undefined' && window.soundManager) {
+          window.soundManager.play('success');
+        }
+        
         // Show notification
         if (addNotification) {
-          addNotification('success', '🎉 Secret window unlocked! You found the desktop Easter egg!', {
+          addNotification('success', '🎉 Secret window unlocked! You found desktop Easter egg!', {
             title: 'Easter Egg',
             duration: 5000
           });
         }
+      }
       }
     }
   }, [doubleClickCount, lastClickTime]);

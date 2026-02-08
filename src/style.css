@@ -464,6 +464,16 @@ body {
   content: 'AR';
 }
 
+/* Phase 5: Sound Control Styles */
+.sound-control:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  transform: scale(1.05);
+}
+
+.sound-control:active {
+  transform: scale(0.95);
+}
+
 .separator {
   width: 1px;
   height: 20px;

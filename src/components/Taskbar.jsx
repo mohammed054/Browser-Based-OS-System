@@ -8,6 +8,9 @@ const Taskbar = ({ openWindow, windows, activeWindowId, addNotification }) => {
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [language, setLanguage] = useState('en');
+  
+  // Phase 5: Sound volume state
+  const [soundVolume, setSoundVolume] = useState(0.3);
 
   // Get running apps from windows prop
   const runningApps = windows.map(window => ({
@@ -117,6 +120,27 @@ const Taskbar = ({ openWindow, windows, activeWindowId, addNotification }) => {
     setSearchTerm('');
   };
 
+  // Phase 5: Handle custom keyboard shortcuts
+  useEffect(() => {
+    const handleOpenStartMenu = () => {
+      toggleStartMenu();
+    };
+
+    const handleCloseMenus = () => {
+      if (isStartMenuOpen) {
+        closeStartMenu();
+      }
+    };
+
+    document.addEventListener('open-start-menu', handleOpenStartMenu);
+    document.addEventListener('escape-pressed', handleCloseMenus);
+    
+    return () => {
+      document.removeEventListener('open-start-menu', handleOpenStartMenu);
+      document.removeEventListener('escape-pressed', handleCloseMenus);
+    };
+  }, [isStartMenuOpen]);
+
   return (
     <>
       {isStartMenuOpen && (
@@ -135,7 +159,16 @@ const Taskbar = ({ openWindow, windows, activeWindowId, addNotification }) => {
       <div className="taskbar">
         {/* Left Section - OS Logo */}
         <div className="taskbar-left">
-          <button className="os-logo-button" onClick={toggleStartMenu}>
+          <button 
+            className="os-logo-button" 
+            onClick={() => {
+              // Phase 5: Play click sound
+              if (typeof window !== 'undefined' && window.soundManager) {
+                window.soundManager.play('click');
+              }
+              toggleStartMenu();
+            }}
+          >
             <img src="./images/logo.png" alt="OS" />
           </button>
         </div>
@@ -147,7 +180,13 @@ const Taskbar = ({ openWindow, windows, activeWindowId, addNotification }) => {
               <div
                 key={app.id}
                 className={`running-app ${app.isActive ? 'active' : ''}`}
-                onClick={() => handleRunningAppClick(app.id)}
+                 onClick={() => {
+                  // Phase 5: Play click sound
+                  if (typeof window !== 'undefined' && window.soundManager) {
+                    window.soundManager.play('click');
+                  }
+                  handleRunningAppClick(app.id);
+                }}
                 title={app.name}
               >
                 <img src={app.icon} alt={app.name} />
@@ -166,6 +205,103 @@ const Taskbar = ({ openWindow, windows, activeWindowId, addNotification }) => {
             onClockClick={handleClockClick}
             addNotification={addNotification}
           />
+          
+          {/* Phase 5: Volume Control */}
+          <div 
+            className="tray-icon sound-control"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              marginLeft: '10px',
+              padding: '4px 8px',
+              borderRadius: '6px',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              background: 'rgba(255, 255, 255, 0.1)',
+              cursor: 'pointer'
+            }}
+            title={`Sound Effects Volume: ${Math.round(soundVolume * 100)}%`}
+            onClick={() => {
+              // Toggle sound on/off
+              if (typeof window !== 'undefined' && window.soundManager) {
+                if (soundVolume > 0) {
+                  setSoundVolume(0);
+                  window.soundManager.disable();
+                } else {
+                  setSoundVolume(0.5);
+                  window.soundManager.enable();
+                  window.soundManager.setVolume(0.5);
+                }
+                // Play click sound
+                window.soundManager.play('click');
+              }
+            }}
+          >
+            <span style={{ 
+              fontSize: '16px', 
+              color: soundVolume > 0 ? 'var(--os-cyan, #38bdf8)' : 'rgba(255, 255, 255, 0.5)',
+              marginRight: '5px',
+              transition: 'all 0.2s'
+            }}>
+              🔊
+            </span>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.1"
+              value={soundVolume}
+              onChange={(e) => {
+                const newVolume = parseFloat(e.target.value);
+                setSoundVolume(newVolume);
+                if (typeof window !== 'undefined' && window.soundManager) {
+                  if (newVolume === 0) {
+                    window.soundManager.disable();
+                  } else {
+                    window.soundManager.enable();
+                    window.soundManager.setVolume(newVolume);
+                  }
+                }
+              }}
+              onClick={(e) => e.stopPropagation()} // Prevent toggle when adjusting volume
+              style={{
+                width: '60px',
+                height: '4px',
+                background: 'transparent',
+                outline: 'none',
+                opacity: soundVolume > 0 ? 1 : 0.5,
+                transition: 'all 0.2s'
+              }}
+            />
+          </div>
+            <span style={{ 
+              fontSize: '16px', 
+              color: 'rgba(255, 255, 255, 0.8)',
+              marginRight: '5px'
+            }}>
+              🔊
+            </span>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.1"
+              value={soundVolume}
+              onChange={(e) => {
+                const newVolume = parseFloat(e.target.value);
+                setSoundVolume(newVolume);
+                if (typeof window !== 'undefined' && window.soundManager) {
+                  window.soundManager.setVolume(newVolume);
+                }
+              }}
+              style={{
+                width: '80px',
+                height: '4px',
+                background: 'transparent',
+                outline: 'none'
+              }}
+            />
+          </div>
         </div>
       </div>
     </>

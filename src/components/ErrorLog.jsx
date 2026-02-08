@@ -1,9 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const ErrorLog = () => {
   const [logs, setLogs] = useState([]);
   const [isLive, setIsLive] = useState(true);
   const [filterLevel, setFilterLevel] = useState('all');
+  
+  // Phase 5: Dynamic system stats based on user interactions
+  const [systemUptime, setSystemUptime] = useState(0);
+  const [userActions, setUserActions] = useState(0);
+  const startTimeRef = useRef(Date.now());
 
   const generateFakeLog = () => {
     const logTypes = [
@@ -66,6 +71,12 @@ const ErrorLog = () => {
 
   useEffect(() => {
     setLogs(initializeLogs());
+    
+    // Update system uptime
+    const updateUptime = () => {
+      const uptime = Math.floor((Date.now() - startTimeRef.current) / 1000);
+      setSystemUptime(uptime);
+    };
 
     if (isLive) {
       const interval = setInterval(() => {
@@ -76,10 +87,25 @@ const ErrorLog = () => {
         };
         
         setLogs(prev => [newLog, ...prev].slice(0, 50)); // Keep max 50 logs
+        updateUptime();
       }, 3000);
 
       return () => clearInterval(interval);
     }
+    
+    // Track user interactions
+    const trackUserAction = () => {
+      setUserActions(prev => prev + 1);
+    };
+
+    // Listen for user actions globally
+    document.addEventListener('click', trackUserAction);
+    document.addEventListener('keydown', trackUserAction);
+    
+    return () => {
+      document.removeEventListener('click', trackUserAction);
+      document.removeEventListener('keydown', trackUserAction);
+    };
   }, [isLive]);
 
   const getLevelColor = (level) => {
@@ -298,7 +324,7 @@ const ErrorLog = () => {
           💡 Tip: Some "errors" might just be developer humor!
         </span>
         <span>
-          Memory: {Math.floor(Math.random() * 50 + 20)}% • CPU: {Math.floor(Math.random() * 30 + 10)}% • Uptime: {Math.floor((Date.now() - performance.timing?.navigationStart || Date.now()) / 60000)}m
+          Memory: {Math.min(85, 35 + Math.floor(systemUptime / 120))}% • CPU: {Math.min(80, 15 + Math.floor(userActions / 10))}% • Uptime: {Math.floor(systemUptime / 60)}m • Actions: {userActions}
         </span>
       </div>
 
