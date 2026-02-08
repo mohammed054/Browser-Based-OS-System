@@ -1,9 +1,14 @@
 import './style.css'
-import { useState, useCallback, Suspense, lazy } from 'react'
+import { useState, useCallback, useEffect, Suspense, lazy } from 'react'
 import Desktop from './components/UI/Desktop'
-import Taskbar from './components/UI/Taskbar'
+import Taskbar from './components/Taskbar'
+import NotificationCenter from './components/UI/NotificationCenter'
+import LockScreen from './components/UI/LockScreen'
 import ErrorBoundary from './components/ErrorBoundary'
 import Hero from './components/UI/Hero'
+import { keyboardManager } from './utils/KeyboardManager'
+import CustomCursor from './components/CustomCursor'
+import { MobileFallback, SimplifiedPortfolio } from './components/MobileFallback'
 
 // Lazy load components for better performance
 const WindowFrame = lazy(() => import('./components/WindowFrame'))
@@ -15,19 +20,74 @@ const FileExplorer = lazy(() => import('./components/FileExplorer'))
 const TrashBin = lazy(() => import('./components/TrashBin'))
 const Notes = lazy(() => import('./components/Notes'))
 
+// Portfolio apps
+const Projects = lazy(() => import('./components/Projects'))
+const Skills = lazy(() => import('./components/Skills'))
+const Contact = lazy(() => import('./components/Contact'))
+const About = lazy(() => import('./components/About'))
+const Resume = lazy(() => import('./components/Resume'))
+const ErrorLog = lazy(() => import('./components/ErrorLog'))
+
 function App() {
   const [showHero, setShowHero] = useState(true);
   
+  // Phase 3 State Management
+  const [notifications, setNotifications] = useState([]);
+  const [isLocked, setIsLocked] = useState(false);
+  const [language, setLanguage] = useState('en');
+  
+  // Phase 5 Mobile State
+  const [showMobileFallback, setShowMobileFallback] = useState(false);
+  const [showSimplified, setShowSimplified] = useState(false);
+  const [mobileWarningAcknowledged, setMobileWarningAcknowledged] = useState(false);
+  
+  // Lock screen time
+  const [currentTime, setCurrentTime] = useState('');
+  const [currentDate, setCurrentDate] = useState('');
+  
+  useEffect(() => {
+    const updateDateTime = () => {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+      const dateString = now.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      setCurrentTime(timeString);
+      setCurrentDate(dateString);
+    };
+
+    updateDateTime();
+    const interval = setInterval(updateDateTime, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+  
   // Calculate initial icon positions with column wrapping
   const getInitialIconPositions = () => {
-    const icons = [
-      { id: 'trash-bin', src: './images/bin.png', label: 'Trash Bin' },
-      { id: 'chrome', src: './images/chrome.png', label: 'Chrome' },
-      { id: 'settings', src: './images/settings.png', label: 'Settings' },
-      { id: 'file-explorer', src: './images/file-explorer.png', label: 'File Explorer' },
+const icons = [
+      // Portfolio apps - prioritized
+      { id: 'projects', src: './images/file-explorer.png', label: 'Projects' },
+      { id: 'skills', src: './images/settings.png', label: 'Skills' },
+      { id: 'contact', src: './images/note.png', label: 'Contact' },
+      { id: 'about', src: './images/logo.png', label: 'About' },
+      // Core system apps
       { id: 'terminal', src: './images/terminal.png', label: 'Terminal' },
+      { id: 'settings', src: './images/settings.png', label: 'Settings' },
+      { id: 'chrome', src: './images/chrome.png', label: 'Chrome' },
+      { id: 'file-explorer', src: './images/file-explorer.png', label: 'File Explorer' },
       { id: 'notes', src: './images/note.png', label: 'Notes' },
       { id: 'calculator', src: './images/calculator.apng', label: 'Calculator' },
+      { id: 'trash-bin', src: './images/bin.png', label: 'Trash Bin' },
+      // Additional portfolio apps
+      { id: 'resume', src: './images/note.png', label: 'Resume' },
+      { id: 'errorlog', src: './images/settings.png', label: 'ErrorLog' },
     ];
 
     const COLUMN_WIDTH = 120; // Horizontal spacing between columns
@@ -78,29 +138,44 @@ function App() {
     }
   ])
   const [desktopIcons, setDesktopIcons] = useState(getInitialIconPositions())
+  
+  // Phase 5 Loading states
+  const [loadingWindows, setLoadingWindows] = useState(new Set());
 
   const handleStartOS = () => {
     setShowHero(false);
   };
 
   const openWindow = (appType) => {
+    // Phase 5: Check if already loading
+    if (loadingWindows.has(appType)) {
+      return; // Prevent duplicate launches
+    }
+
     // For Notes, allow multiple windows
     if (appType === 'Notes') {
       const notesWindows = windows.filter(w => w.id.startsWith('Notes-'))
       const nextId = `Notes-${notesWindows.length + 1}`
       const offset = windows.length * 20 // Slight offset for cascade effect
-      const getComponent = (appType) => {
-        switch (appType) {
-          case 'Calculator': return Calculator;
-          case 'Terminal': return Terminal;
-          case 'Chrome': return Chrome;
-          case 'Settings': return Settings;
-          case 'File Explorer': return FileExplorer;
-          case 'Trash Bin': return TrashBin;
-          case 'Notes': return Notes;
-          default: return () => <div>{appType} App</div>;
-        }
-      };
+const getComponent = (appType) => {
+      switch (appType) {
+        case 'Calculator': return Calculator;
+        case 'Terminal': return Terminal;
+        case 'Chrome': return Chrome;
+        case 'Settings': return Settings;
+        case 'File Explorer': return FileExplorer;
+        case 'Trash Bin': return TrashBin;
+        case 'Notes': return Notes;
+        // Portfolio apps
+        case 'Projects': return Projects;
+        case 'Skills': return Skills;
+        case 'Contact': return Contact;
+        case 'About': return About;
+        case 'Resume': return Resume;
+        case 'ErrorLog': return ErrorLog;
+        default: return () => <div>{appType} App</div>;
+      }
+    };
 
       // Desktop container dimensions (viewport minus taskbar)
       const desktopWidth = window.innerWidth;
@@ -140,60 +215,121 @@ function App() {
       return // No duplicates
     }
 
-    const offset = windows.length * 20 // Slight offset for cascade effect
-    const getComponent = (appType) => {
-      switch (appType) {
-        case 'Calculator': return Calculator;
-        case 'Terminal': return Terminal;
-        case 'Chrome': return Chrome;
-        case 'Settings': return Settings;
-        case 'File Explorer': return FileExplorer;
-        case 'Trash Bin': return TrashBin;
-        case 'Notes': return Notes;
-        default: return () => <div>{appType} App</div>;
-      }
+    // Phase 5: Add loading delay
+    setLoadingWindows(prev => new Set(prev).add(appType));
+    
+    // Calculate realistic delay (80-150ms based on app complexity)
+    const getAppDelay = (app) => {
+      const delays = {
+        'Calculator': 80,
+        'Terminal': 100,
+        'Notes': 120,
+        'Settings': 100,
+        'File Explorer': 130,
+        'Trash Bin': 90,
+        'Chrome': 150,
+        'Projects': 140,
+        'Skills': 120,
+        'Contact': 110,
+        'About': 100,
+        'Resume': 110,
+        'ErrorLog': 130
+      };
+      return delays[app] || 120;
     };
 
-    // Desktop container dimensions (viewport minus taskbar)
-    const desktopWidth = window.innerWidth;
-    const desktopHeight = window.innerHeight - 48;
+    const launchDelay = getAppDelay(appType);
+    
+    // Show loading notification
+    addNotification('system', `Launching ${appType}...`, {
+      title: 'System',
+      duration: launchDelay
+    });
 
-    // Special sizing for Calculator (portrait mode)
-    const isCalculator = appType === 'Calculator';
-    let defaultWidth, defaultHeight;
-    if (isCalculator) {
-      // Calculate maximum height that fits in desktop area
-      const availableHeight = desktopHeight - 20; // Some padding
-      // Maintain 9:16 aspect ratio, but cap at available height
-      const aspectRatioHeight = Math.floor(320 * 16 / 9); // 568px for 320px width
-      const maxAllowedHeight = Math.min(aspectRatioHeight, availableHeight);
-      // Adjust width to maintain aspect ratio if height is constrained
-      const calculatedWidth = Math.min(320, Math.floor(maxAllowedHeight * 9 / 16));
-      const calculatedHeight = Math.floor(calculatedWidth * 16 / 9);
+    setTimeout(() => {
+      setLoadingWindows(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(appType);
+        return newSet;
+      });
+      
+      // Continue with window creation...
+    }, launchDelay);
 
-      defaultWidth = calculatedWidth;
-      defaultHeight = calculatedHeight;
-    } else {
-      defaultWidth = Math.floor(desktopWidth * 0.75);
-      defaultHeight = Math.floor(desktopHeight * 0.75);
-    }
+    setTimeout(() => {
+      setLoadingWindows(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(appType);
+        return newSet;
+      });
+      
+      const offset = windows.length * 20 // Slight offset for cascade effect
+      const getComponent = (appType) => {
+        switch (appType) {
+          case 'Calculator': return Calculator;
+          case 'Terminal': return Terminal;
+          case 'Chrome': return Chrome;
+          case 'Settings': return Settings;
+          case 'File Explorer': return FileExplorer;
+          case 'Trash Bin': return TrashBin;
+          case 'Notes': return Notes;
+          // Portfolio apps
+          case 'Projects': return Projects;
+          case 'Skills': return Skills;
+          case 'Contact': return Contact;
+          case 'About': return About;
+          case 'Resume': return Resume;
+          case 'ErrorLog': return ErrorLog;
+          default: return () => <div>{appType} App</div>;
+        }
+      };
 
-    const newWindow = {
-      id: appType,
-      title: appType,
-      component: getComponent(appType),
-      x: Math.max(0, (desktopWidth - defaultWidth) / 2 + offset), // Center horizontally with offset
-      y: Math.max(0, (desktopHeight - defaultHeight) / 2 + offset), // Center vertically with offset
-      width: defaultWidth,
-      height: defaultHeight,
-      maximized: false,
-      minimized: false,
-      lastBounds: null,
-      isCalculator: isCalculator
-    }
+      // Desktop container dimensions (viewport minus taskbar)
+      const desktopWidth = window.innerWidth;
+      const desktopHeight = window.innerHeight - 48;
 
-    setWindows(prev => [...prev, newWindow])
-    setActiveWindowId(appType)
+      // Special sizing for different app types
+      const isCalculator = appType === 'Calculator';
+      const isPortfolioApp = ['Projects', 'Skills', 'Contact', 'About', 'Resume', 'ErrorLog'].includes(appType);
+      let defaultWidth, defaultHeight;
+      
+      if (isCalculator) {
+        // Calculator portrait mode
+        const availableHeight = desktopHeight - 20;
+        const aspectRatioHeight = Math.floor(320 * 16 / 9);
+        const maxAllowedHeight = Math.min(aspectRatioHeight, availableHeight);
+        const calculatedWidth = Math.min(320, Math.floor(maxAllowedHeight * 9 / 16));
+        const calculatedHeight = Math.floor(calculatedWidth * 16 / 9);
+
+        defaultWidth = calculatedWidth;
+        defaultHeight = calculatedHeight;
+      } else if (isPortfolioApp) {
+        // Portfolio apps - fixed 520x420 size
+        defaultWidth = 520;
+        defaultHeight = 420;
+      } else {
+        // Other system apps - 75% of desktop
+        defaultWidth = Math.floor(desktopWidth * 0.75);
+        defaultHeight = Math.floor(desktopHeight * 0.75);
+      }
+
+      const newWindow = {
+        id: appType,
+        title: appType,
+        component: getComponent(appType),
+        x: Math.max(0, (desktopWidth - defaultWidth) / 2 + offset), // Center horizontally with offset
+        y: Math.max(0, (desktopHeight - defaultHeight) / 2 + offset), // Center vertically with offset
+        width: defaultWidth,
+        height: defaultHeight,
+        maximized: false,
+        minimized: false,
+        lastBounds: null,
+        isCalculator: isCalculator
+      }
+
+      setWindows(prev => [...prev, newWindow])
+      setActiveWindowId(appType)
+    }, launchDelay);
   }
 
   const closeWindow = (id) => {
@@ -380,7 +516,163 @@ function App() {
       newIcons[movedIconIndex] = { ...movedIcon, x: newX, y: newY };
       return newIcons;
     });
+}, []);
+
+  // Phase 3 Notification Management
+  const addNotification = useCallback((type, message, options = {}) => {
+    const notification = {
+      id: Date.now() + Math.random(),
+      type,
+      message,
+      timestamp: new Date(),
+      duration: options.duration || 5000,
+      title: options.title,
+      ...options
+    };
+    setNotifications(prev => [...prev, notification]);
   }, []);
+
+  const removeNotification = useCallback((id) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  }, []);
+
+  // Phase 5 Keyboard Shortcuts System
+  useEffect(() => {
+    // Alt+Tab - Window switching
+    const altTabUnregister = keyboardManager.registerShortcut({
+      id: 'alt-tab',
+      keys: ['Alt', 'Tab'],
+      action: () => {
+        const visibleWindows = windows.filter(w => !w.minimized);
+        if (visibleWindows.length > 1) {
+          const currentWindowIndex = visibleWindows.findIndex(w => w.id === activeWindowId);
+          const nextIndex = (currentWindowIndex + 1) % visibleWindows.length;
+          focusWindow(visibleWindows[nextIndex].id);
+        }
+      },
+      context: 'global',
+      description: 'Switch between windows',
+      preventDefault: true
+    });
+
+    // Ctrl+Space - Open Start Search
+    const ctrlSpaceUnregister = keyboardManager.registerShortcut({
+      id: 'ctrl-space',
+      keys: ['Ctrl', 'Space'],
+      action: () => {
+        // Trigger start menu open
+        const event = new CustomEvent('open-start-menu');
+        document.dispatchEvent(event);
+      },
+      context: 'global',
+      description: 'Open start menu search',
+      preventDefault: true
+    });
+
+    // Ctrl+W - Close active window
+    const ctrlWUnregister = keyboardManager.registerShortcut({
+      id: 'ctrl-w',
+      keys: ['Ctrl', 'KeyW'],
+      action: () => {
+        if (activeWindowId) {
+          closeWindow(activeWindowId);
+        }
+      },
+      context: 'global',
+      description: 'Close active window',
+      preventDefault: true
+    });
+
+    // Ctrl+` - Open Terminal
+    const ctrlBacktickUnregister = keyboardManager.registerShortcut({
+      id: 'ctrl-backtick',
+      keys: ['Ctrl', 'Backquote'],
+      action: () => {
+        openWindow('Terminal');
+      },
+      context: 'global',
+      description: 'Open terminal',
+      preventDefault: true
+    });
+
+    // Alt+F4 - Close active window
+    const altF4Unregister = keyboardManager.registerShortcut({
+      id: 'alt-f4',
+      keys: ['Alt', 'F4'],
+      action: () => {
+        if (activeWindowId) {
+          closeWindow(activeWindowId);
+        }
+      },
+      context: 'global',
+      description: 'Close active window (Alt+F4)',
+      preventDefault: true
+    });
+
+    // Escape - Close modals/dropdowns
+    const escUnregister = keyboardManager.registerShortcut({
+      id: 'escape',
+      keys: ['Escape'],
+      action: () => {
+        const event = new CustomEvent('escape-pressed');
+        document.dispatchEvent(event);
+      },
+      context: 'global',
+      description: 'Close dialogs/modals',
+      preventDefault: true
+    });
+
+    // Konami Code Easter Egg
+    const konamiUnregister = keyboardManager.on('konami-code-activated', () => {
+      addNotification('success', '🎮 Konami Code Activated! Secret mode enabled!', {
+        title: 'Easter Egg',
+        duration: 5000
+      });
+      // Add secret visual effect
+      document.body.style.animation = 'glitch 0.3s ease-in-out';
+      setTimeout(() => {
+        document.body.style.animation = '';
+      }, 300);
+    });
+
+    // Cleanup function
+    return () => {
+      altTabUnregister();
+      ctrlSpaceUnregister();
+      ctrlWUnregister();
+      ctrlBacktickUnregister();
+      altF4Unregister();
+      escUnregister();
+      konamiUnregister();
+    };
+  }, [windows, activeWindowId, openWindow, closeWindow, focusWindow, addNotification]);
+
+  // Phase 3 Lock/Unlock Functions
+  const lockSystem = useCallback(() => {
+    setIsLocked(true);
+    addNotification('system', 'System locked', {
+      title: 'Security',
+      duration: 3000
+    });
+  }, [addNotification]);
+
+  const unlockSystem = useCallback((password) => {
+    // Fake authentication - accept 'portfolio' as password
+    if (password === 'portfolio') {
+      setIsLocked(false);
+      addNotification('success', 'System unlocked successfully', {
+        title: 'Security',
+        duration: 3000
+      });
+      return true;
+    } else {
+      addNotification('error', 'Incorrect password. Try "portfolio"', {
+        title: 'Authentication Error',
+        duration: 4000
+      });
+      return false;
+    }
+  }, [addNotification]);
 
   const renderComponent = (win) => {
     const Component = win.component;
@@ -407,8 +699,34 @@ function App() {
     return <Hero onStart={handleStartOS} />;
   }
 
-  return (
+  // Phase 5: Show mobile fallback on mobile devices
+  if (!mobileWarningAcknowledged) {
+    return (
+      <>
+        <MobileFallback
+          onContinue={() => setMobileWarningAcknowledged(true)}
+          onSimplified={() => {
+            setMobileWarningAcknowledged(true);
+            setShowSimplified(true);
+          }}
+        />
+        <CustomCursor />
+      </>
+    );
+  }
+
+  // Phase 5: Show simplified portfolio on mobile
+  if (showSimplified) {
+    return (
+      <SimplifiedPortfolio onClose={() => setShowSimplified(false)} />
+    );
+  }
+
+return (
     <>
+      {/* Phase 5 Custom Cursor */}
+      <CustomCursor />
+      
       <div className={`app ${theme}`}>
         <Desktop
           openWindow={openWindow}
@@ -423,8 +741,26 @@ function App() {
           toggleMaximizeWindow={toggleMaximizeWindow}
           minimizeWindow={minimizeWindow}
           activeWindowId={activeWindowId}
+          addNotification={addNotification}
         />
-        <Taskbar openWindow={openWindow} />
+<Taskbar 
+          openWindow={openWindow}
+          windows={windows}
+          activeWindowId={activeWindowId}
+          addNotification={addNotification}
+        />
+        <NotificationCenter 
+          notifications={notifications}
+          onRemoveNotification={removeNotification}
+        />
+        
+        {/* Lock Screen Overlay */}
+        <LockScreen
+          isVisible={isLocked}
+          onUnlock={unlockSystem}
+          currentTime={currentTime}
+          currentDate={currentDate}
+        />
       </div>
     </>
   )

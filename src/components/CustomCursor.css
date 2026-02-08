@@ -1,0 +1,305 @@
+/**
+ * Custom Cursor Styles
+ * Provides OS-wide custom cursor with smooth animations
+ */
+
+/* Hide default cursor for custom cursor */
+body {
+  cursor: none !important;
+}
+
+/* On touch devices, show default cursor */
+@media (pointer: coarse) {
+  body {
+    cursor: auto !important;
+  }
+  
+  .custom-cursor,
+  .cursor-trail {
+    display: none !important;
+  }
+}
+
+/* Custom cursor container */
+.custom-cursor {
+  position: fixed;
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+  z-index: 999999;
+  transform: translate(-50%, -50%);
+  transition: transform 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  mix-blend-mode: difference;
+}
+
+/* Cursor dot */
+.cursor-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  background: var(--os-cyan, #38bdf8);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: all 0.15s ease;
+  box-shadow: 0 0 10px var(--os-cyan-glow, rgba(56, 189, 248, 0.3));
+}
+
+/* Cursor ring */
+.cursor-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--os-cyan, #38bdf8);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  box-shadow: 0 0 15px var(--os-cyan-glow, rgba(56, 189, 248, 0.3));
+}
+
+/* Click ripple effect */
+.cursor-ripple {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 30px;
+  height: 30px;
+  border: 2px solid var(--os-cyan, #38bdf8);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: ripple 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+/* Cursor trail effect */
+.cursor-trail {
+  position: fixed;
+  width: 8px;
+  height: 8px;
+  pointer-events: none;
+  z-index: 999998;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  opacity: 0.3;
+}
+
+.cursor-trail::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  background: var(--os-cyan, #38bdf8);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Cursor states */
+
+/* Default cursor */
+.cursor-default {
+  width: 20px;
+  height: 20px;
+}
+
+.cursor-default .cursor-ring {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
+
+/* Pointer cursor (links, buttons) */
+.cursor-pointer {
+  width: 24px;
+  height: 24px;
+}
+
+.cursor-pointer .cursor-ring {
+  width: 20px;
+  height: 20px;
+  border-width: 2px;
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.cursor-pointer .cursor-dot {
+  background: var(--os-cyan);
+  width: 6px;
+  height: 6px;
+}
+
+/* Text cursor (input fields, text areas) */
+.cursor-text {
+  width: 24px;
+  height: 24px;
+}
+
+.cursor-text .cursor-ring {
+  width: 2px;
+  height: 20px;
+  border-width: 0;
+  background: var(--os-cyan);
+  border-radius: 1px;
+  transform: translate(-50%, -50%);
+}
+
+.cursor-text .cursor-dot {
+  width: 2px;
+  height: 8px;
+  background: var(--os-cyan);
+  border-radius: 1px;
+  transform: translate(-50%, -50%);
+}
+
+/* Resize cursor */
+.cursor-resize {
+  width: 28px;
+  height: 28px;
+}
+
+.cursor-resize .cursor-ring {
+  width: 12px;
+  height: 12px;
+  border-width: 3px;
+  border-color: var(--os-cyan);
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.cursor-resize .cursor-dot {
+  width: 2px;
+  height: 2px;
+  opacity: 0;
+}
+
+/* Grab cursor */
+.cursor-grab {
+  width: 22px;
+  height: 22px;
+}
+
+.cursor-grab .cursor-ring {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+  border-style: dashed;
+  animation: grab-pulse 2s infinite;
+}
+
+/* Grabbing cursor */
+.cursor-grabbing {
+  width: 18px;
+  height: 18px;
+}
+
+.cursor-grabbing .cursor-ring {
+  width: 12px;
+  height: 12px;
+  border-width: 3px;
+  background: rgba(56, 189, 248, 0.2);
+}
+
+.cursor-grabbing .cursor-dot {
+  width: 8px;
+  height: 8px;
+}
+
+/* Clicking state */
+.clicking {
+  transform: translate(-50%, -50%) scale(0.8);
+}
+
+.clicking .cursor-ring {
+  border-color: #fff;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+}
+
+.clicking .cursor-dot {
+  background: #fff;
+}
+
+/* Animations */
+
+@keyframes ripple {
+  0% {
+    width: 30px;
+    height: 30px;
+    opacity: 1;
+    border-width: 2px;
+  }
+  100% {
+    width: 60px;
+    height: 60px;
+    opacity: 0;
+    border-width: 1px;
+  }
+}
+
+@keyframes grab-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Performance optimizations */
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .custom-cursor {
+    transition: none;
+  }
+  
+  .cursor-ring,
+  .cursor-dot {
+    transition: none;
+  }
+  
+  .cursor-ripple {
+    animation: none;
+  }
+  
+  .cursor-grab .cursor-ring {
+    animation: none;
+  }
+}
+
+/* Hide custom cursor over OS-specific elements */
+.os-logo-button,
+.tray-icon,
+.taskbar,
+.clock,
+.window-frame {
+  cursor: pointer !important;
+}
+
+/* Ensure custom cursor works with existing hover states */
+.icon:hover,
+.running-app:hover,
+.context-menu-item:hover,
+.start-menu-app:hover,
+.notification-close:hover {
+  /* These will trigger pointer cursor state */
+}
+
+/* Text inputs */
+input[type="text"],
+input[type="password"],
+textarea,
+.terminal-input {
+  cursor: text !important;
+}
+
+/* Draggable elements */
+.desktop-icon,
+.window-frame .titlebar {
+  cursor: grab !important;
+}
+
+.window-frame .resize-handle {
+  cursor: resize !important;
+}

@@ -344,19 +344,137 @@ const WindowFrame = ({
         style={frameStyle}
         onClick={onFocus}
       >
-        <div className="window-titlebar" onMouseDown={handleMouseDown}>
-          <div className="window-title">{title}</div>
-          <div className="window-buttons">
-            <button className="window-button minimize" onClick={handleMinimizeClick}>—</button>
+        <div 
+          className="window-titlebar" 
+          onMouseDown={handleMouseDown}
+          style={{
+            height: theme.dimensions.windowHeaderHeight,
+            backgroundColor: theme.colors.panel,
+            borderBottom: `1px solid ${theme.colors.accentPrimary}30`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: `0 ${theme.spacing.lg}`,
+            cursor: 'move',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)'
+          }}
+        >
+          <div 
+            className="window-title"
+            style={{
+              fontFamily: theme.typography.heading,
+              fontSize: theme.typography.sizes.base,
+              fontWeight: theme.typography.weights.medium,
+              color: theme.colors.textPrimary,
+              userSelect: 'none',
+              textShadow: isActive ? `0 0 10px ${theme.colors.accentPrimary}40` : 'none'
+            }}
+          >{title}</div>
+          <div className="window-buttons" style={{ display: 'flex', gap: '0' }}>
+            <button 
+              className="window-button minimize" 
+              onClick={handleMinimizeClick}
+              style={{
+                backgroundColor: theme.colors.accentSecondary, // #FACC15 - Yellow
+                color: theme.colors.textInverted,
+                transition: theme.animations.hover,
+                border: 'none',
+                boxShadow: `0 0 10px ${theme.colors.accentSecondary}50`
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.05)';
+                e.currentTarget.style.boxShadow = `0 0 20px ${theme.colors.accentSecondary}80`;
+                e.currentTarget.style.filter = 'brightness(1.2)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.boxShadow = `0 0 10px ${theme.colors.accentSecondary}50`;
+                e.currentTarget.style.filter = 'brightness(1)';
+              }}
+            >—</button>
             <button
               className={`window-button maximize ${isCalculator ? 'disabled' : ''}`}
               onClick={handleMaximizeClick}
-              style={isCalculator ? { cursor: 'not-allowed', opacity: 0.5 } : {}}
+              disabled={isCalculator}
+              style={{
+                backgroundColor: isCalculator ? 'transparent' : theme.colors.accentTertiary, // #22C55E - Green
+                color: isCalculator ? theme.colors.textPrimary : theme.colors.textInverted,
+                transition: theme.animations.hover,
+                border: isCalculator ? `1px solid ${theme.colors.accentPrimary}30` : 'none',
+                boxShadow: isCalculator ? 'none' : `0 0 10px ${theme.colors.accentTertiary}50`,
+                cursor: isCalculator ? 'not-allowed' : 'pointer',
+                opacity: isCalculator ? 0.5 : 1
+              }}
+              onMouseEnter={(e) => {
+                if (!isCalculator) {
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                  e.currentTarget.style.boxShadow = `0 0 20px ${theme.colors.accentTertiary}80`;
+                  e.currentTarget.style.filter = 'brightness(1.2)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isCalculator) {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = `0 0 10px ${theme.colors.accentTertiary}50`;
+                  e.currentTarget.style.filter = 'brightness(1)';
+                }
+              }}
             >□</button>
-            <button className="window-button close" onClick={(e) => { e.stopPropagation(); onClose(); }}>✕</button>
+            <button 
+              className="window-button close" 
+              onClick={(e) => { e.stopPropagation(); onClose(); }}
+              style={{
+                backgroundColor: theme.colors.accentQuaternary, // #EF4444 - Red
+                color: theme.colors.textInverted,
+                transition: theme.animations.hover,
+                border: 'none',
+                boxShadow: `0 0 10px ${theme.colors.accentQuaternary}50`
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.05)';
+                e.currentTarget.style.boxShadow = `0 0 20px ${theme.colors.accentQuaternary}80`;
+                e.currentTarget.style.filter = 'brightness(1.2)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.boxShadow = `0 0 10px ${theme.colors.accentQuaternary}50`;
+                e.currentTarget.style.filter = 'brightness(1)';
+              }}
+            >✕</button>
           </div>
         </div>
-        <div className="window-body">
+        <div 
+          className="window-body"
+          style={{
+            flex: 1,
+            padding: theme.spacing.lg,
+            backgroundColor: theme.colors.windowBg,
+            overflow: 'auto',
+            color: theme.colors.textPrimary
+          }}
+        >
+          <style jsx>{`
+            .window-body::-webkit-scrollbar {
+              width: 8px;
+            }
+            
+            .window-body::-webkit-scrollbar-track {
+              background: ${theme.colors.panel};
+              border-radius: 4px;
+            }
+            
+            .window-body::-webkit-scrollbar-thumb {
+              background: ${theme.colors.accentPrimary};
+              border-radius: 4px;
+              transition: background-color 0.2s;
+            }
+            
+            .window-body::-webkit-scrollbar-thumb:hover {
+              background: ${theme.colors.accentSecondary};
+              box-shadow: 0 0 10px ${theme.colors.accentSecondary}50;
+            }
+          `}</style>
           {children}
         </div>
       </div>
