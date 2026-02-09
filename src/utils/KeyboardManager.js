@@ -15,8 +15,12 @@ class KeyboardManager {
     this.contexts = new Map();
     this.activeContext = 'global';
     this.konamiCode = [];
-    this.konamiPattern = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
-    this.eventListeners = new Set();
+    this.konamiPattern = [
+      'ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 
+      'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 
+      'KeyB', 'KeyA'
+    ];
+    this.eventListeners = new Map();
     this.isDestroyed = false;
     
     this.init();

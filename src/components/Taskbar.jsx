@@ -253,8 +253,7 @@ const Taskbar = ({ openWindow, windows, activeWindowId, addNotification }) => {
               cursor: 'pointer'
             }}
             title={`Sound Effects Volume: ${Math.round(soundVolume * 100)}%`}
-              onClick={handleToggleSound}
-            title={`Sound Effects Volume: ${Math.round(soundVolume * 100)}%`}
+            onClick={handleToggleSound}
           >
             <span style={{ 
               fontSize: '16px', 
@@ -280,35 +279,6 @@ const Taskbar = ({ openWindow, windows, activeWindowId, addNotification }) => {
                 opacity: soundVolume > 0 ? 1 : 0.5,
                 transition: 'all 0.2s'
               }}
-            />
-          </div>
-            <span style={{ 
-              fontSize: '16px', 
-              color: 'rgba(255, 255, 255, 0.8)',
-              marginRight: '5px'
-            }}>
-              🔊
-            </span>
-              <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.1"
-              value={soundVolume}
-              onChange={(e) => {
-                const newVolume = parseFloat(e.target.value);
-                setSoundVolume(newVolume);
-                if (typeof window !== 'undefined' && window.soundManager) {
-                  window.soundManager.setVolume(newVolume);
-                }
-              }}
-              style={{
-                width: '80px',
-                height: '4px',
-                background: 'transparent',
-                outline: 'none'
-              }}
-            />
             />
           </div>
         </div>

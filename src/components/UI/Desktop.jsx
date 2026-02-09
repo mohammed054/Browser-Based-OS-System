@@ -244,7 +244,6 @@ const Desktop = ({
           });
         }
       }
-      }
     }
   }, [doubleClickCount, lastClickTime]);
 

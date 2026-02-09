@@ -40,7 +40,7 @@ function App() {
   // Phase 5 Mobile State
   const [showMobileFallback, setShowMobileFallback] = useState(false);
   const [showSimplified, setShowSimplified] = useState(false);
-  // const [mobileWarningAcknowledged, setMobileWarningAcknowledged] = useState(false); // Future: Better mobile handling
+  const [mobileWarningAcknowledged, setMobileWarningAcknowledged] = useState(false);
   
   // Lock screen time
   const [currentTime, setCurrentTime] = useState('');
@@ -147,10 +147,10 @@ const icons = [
   useEffect(() => {
     if (typeof window !== 'undefined') {
       window.soundManager = soundManager;
-      // Set initial volume
-      soundManager.setVolume(soundVolume);
+      // Set initial volume to default (0.3)
+      soundManager.setVolume(0.3);
     }
-  }, [soundVolume]);
+  }, []);
 
   const handleStartOS = () => {
     setShowHero(false);
