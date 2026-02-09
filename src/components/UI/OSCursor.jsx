@@ -168,6 +168,152 @@ const OSCursor = () => {
   }, []);
 
   // Always render cursor (no visibility null check)
+  const getCursorSVG = () => {
+    switch (cursorState) {
+      case 'pointer':
+        return (
+          <svg 
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            shape-rendering="crispEdges"
+            className="cursor-svg"
+          >
+            {/* Shadow / outline */}
+            <path
+              d="M4 2 L4 18 L7.5 14.5 L10 22 L12.5 21 L10 13.5 L14 13 Z"
+              fill="#0B0F14"
+              transform="translate(1,1)"
+              className="cursor-shadow"
+              filter="drop-shadow(0 0 8px rgba(56, 189, 248, 0.6))"
+            />
+            
+            {/* Main cursor */}
+            <path
+              d="M4 2 L4 18 L7.5 14.5 L10 22 L12.5 21 L10 13.5 L14 13 Z"
+              fill="#E5E7EB"
+              filter="drop-shadow(0 0 8px rgba(56, 189, 248, 0.6))"
+            />
+          </svg>
+        );
+      
+      case 'text':
+        return (
+          <div className="text-cursor">
+            <div className="text-beam" />
+          </div>
+        );
+      
+      case 'drag':
+        return (
+          <svg 
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            shape-rendering="crispEdges"
+            className="cursor-svg"
+          >
+            {/* Shadow / outline */}
+            <path
+              d="M2 12 L22 12 M12 2 L12 22"
+              stroke="#0B0F14"
+              strokeWidth="2"
+              transform="translate(1,1)"
+              className="cursor-shadow"
+              filter="drop-shadow(0 0 4px rgba(56, 189, 248, 0.4))"
+            />
+            
+            {/* Cross cursor */}
+            <path
+              d="M2 12 L22 12 M12 2 L12 22"
+              stroke="#E5E7EB"
+              strokeWidth="2"
+              strokeLinecap="round"
+              filter="drop-shadow(0 0 4px rgba(56, 189, 248, 0.4))"
+            />
+            
+            {/* Center dot */}
+            <circle
+              cx="12"
+              cy="12"
+              r="1.5"
+              fill="#E5E7EB"
+            />
+          </svg>
+        );
+      
+      case 'resize':
+        return (
+          <svg 
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            shape-rendering="crispEdges"
+            className="cursor-svg"
+          >
+            {/* Shadow / outline */}
+            {resizeType === 'ns' && (
+              <>
+                <path d="M12 4 L12 20" stroke="#0B0F14" strokeWidth="2" transform="translate(0,1)" className="cursor-shadow" />
+                <path d="M10 8 L14 8 M10 16 L14 16" stroke="#0B0F14" strokeWidth="2" transform="translate(0,1)" className="cursor-shadow" />
+                <path d="M12 4 L12 20" stroke="#E5E7EB" strokeWidth="2" filter="drop-shadow(0 0 4px rgba(56, 189, 248, 0.3))" />
+                <path d="M10 8 L14 8 M10 16 L14 16" stroke="#E5E7EB" strokeWidth="2" filter="drop-shadow(0 0 4px rgba(56, 189, 248, 0.3))" />
+              </>
+            )}
+            {resizeType === 'ew' && (
+              <>
+                <path d="M4 12 L20 12" stroke="#0B0F14" strokeWidth="2" transform="translate(1,0)" className="cursor-shadow" />
+                <path d="M8 10 L8 14 M16 10 L16 14" stroke="#0B0F14" strokeWidth="2" transform="translate(1,0)" className="cursor-shadow" />
+                <path d="M4 12 L20 12" stroke="#E5E7EB" strokeWidth="2" filter="drop-shadow(0 0 4px rgba(56, 189, 248, 0.3))" />
+                <path d="M8 10 L8 14 M16 10 L16 14" stroke="#E5E7EB" strokeWidth="2" filter="drop-shadow(0 0 4px rgba(56, 189, 248, 0.3))" />
+              </>
+            )}
+            {resizeType === 'nesw' && (
+              <>
+                <path d="M6 6 L18 18 M6 18 L18 6" stroke="#0B0F14" strokeWidth="2" transform="translate(1,1)" className="cursor-shadow" />
+                <path d="M6 6 L18 18 M6 18 L18 6" stroke="#E5E7EB" strokeWidth="2" filter="drop-shadow(0 0 4px rgba(56, 189, 248, 0.3))" />
+              </>
+            )}
+            {resizeType === 'nwse' && (
+              <>
+                <path d="M6 18 L18 6 M6 6 L18 18" stroke="#0B0F14" strokeWidth="2" transform="translate(1,1)" className="cursor-shadow" />
+                <path d="M6 18 L18 6 M6 6 L18 18" stroke="#E5E7EB" strokeWidth="2" filter="drop-shadow(0 0 4px rgba(56, 189, 248, 0.3))" />
+              </>
+            )}
+          </svg>
+        );
+      
+      default:
+        return (
+          <svg 
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            shape-rendering="crispEdges"
+            className="cursor-svg"
+          >
+            {/* Shadow / outline */}
+            <path
+              d="M4 2 L4 18 L7.5 14.5 L10 22 L12.5 21 L10 13.5 L14 13 Z"
+              fill="#0B0F14"
+              transform="translate(1,1)"
+              className="cursor-shadow"
+            />
+            
+            {/* Main cursor */}
+            <path
+              d="M4 2 L4 18 L7.5 14.5 L10 22 L12.5 21 L10 13.5 L14 13 Z"
+              fill="#E5E7EB"
+            />
+          </svg>
+        );
+    }
+  };
+
   const getCursorClass = () => {
     let className = 'os-cursor';
     
@@ -203,7 +349,9 @@ const OSCursor = () => {
         left: position.x,
         top: position.y,
       }}
-    />
+    >
+      {getCursorSVG()}
+    </div>
   );
 };
 

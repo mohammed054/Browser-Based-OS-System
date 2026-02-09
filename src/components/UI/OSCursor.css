@@ -22,33 +22,43 @@ body {
 /* Base OS cursor */
 .os-cursor {
   position: fixed;
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
   pointer-events: none;
   z-index: 999999;
   transform: translate(-50%, -50%);
   transition: transform 50ms ease-out;
-  /* No mix-blend-mode - causes visibility issues */
 }
 
-/* Sharp arrow shape using CSS */
-.os-cursor::before {
-  content: '';
-  position: absolute;
-  width: 0;
-  height: 0;
-  border-left: 2px solid transparent;
-  border-right: 8px solid transparent;
-  border-bottom: 10px solid #E5E7EB; /* Soft white */
-  transform: rotate(45deg);
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+/* SVG cursor elements */
+.os-cursor .cursor-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  transition: all 50ms ease-out;
+}
+
+.cursor-shadow {
+  transition: all 50ms ease-out;
+}
+
+.cursor-main {
   transition: all 50ms ease-out;
 }
 
 /* Default cursor - sharp arrow */
 .cursor-default {
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
+}
+
+.cursor-default .cursor-shadow {
+  fill: #0B0F14;
+  transform: translate(1,1);
+}
+
+.cursor-default .cursor-main {
+  fill: #E5E7EB; /* Soft white */
 }
 
 .cursor-default::before {
@@ -58,36 +68,36 @@ body {
 
 /* Pointer cursor - arrow with cyan glow */
 .cursor-pointer {
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   transform: translate(-50%, -50%) scale(1.1);
 }
 
-.cursor-pointer::before {
-  border-bottom-width: 11px;
-  border-left-width: 2px;
-  border-right-width: 9px;
-  border-bottom-color: #E5E7EB;
+.cursor-pointer .cursor-shadow {
+  fill: #0B0F14;
+  transform: translate(1,1);
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6)); /* Cyan glow */
+}
+
+.cursor-pointer .cursor-main {
+  fill: #E5E7EB;
   filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6)); /* Cyan glow */
 }
 
 /* Text cursor - I-beam */
 .cursor-text {
-  width: 2px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
   transform: translate(-50%, -50%);
 }
 
-.cursor-text::before {
-  content: '';
-  position: absolute;
+.text-cursor {
   width: 2px;
   height: 16px;
-  background: #E5E7EB; /* Soft white */
-  border: none;
-  border-radius: 1px;
-  transform: none;
-  filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.3)); /* Subtle cyan outline */
+  background: #E5E7EB;
+  margin: 4px 11px;
+  position: relative;
+  filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.3));
   animation: text-blink 2s infinite;
 }
 
@@ -191,18 +201,21 @@ body {
   animation: error-flicker 200ms ease-out;
 }
 
-.cursor-error::before {
-  border-bottom-color: #EF4444; /* Red */
+.cursor-error .cursor-svg,
+.cursor-error .text-cursor {
   filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.6));
+}
+
+.cursor-error .cursor-main,
+.cursor-error .text-cursor {
+  fill: #EF4444; /* Red */
 }
 
 @keyframes error-flicker {
   0%, 100% {
-    border-bottom-color: #E5E7EB;
     filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
   }
   50% {
-    border-bottom-color: #EF4444; /* Red */
     filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.6));
   }
 }
@@ -210,6 +223,10 @@ body {
 /* Loading state - subtle pulse on default arrow */
 .cursor-loading {
   animation: loading-pulse 1.5s ease-in-out infinite;
+}
+
+.cursor-loading .cursor-svg {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
 }
 
 @keyframes loading-pulse {
