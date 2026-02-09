@@ -296,7 +296,7 @@ const SystemMonitor = () => {
       </div>
 
       {/* Custom scrollbar */}
-      <style jsx>{`
+      <style>{`
         ::-webkit-scrollbar {
           width: 4px;
         }

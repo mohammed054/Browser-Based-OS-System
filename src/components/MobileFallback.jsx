@@ -195,7 +195,7 @@ const MobileFallback = ({ onContinue, onSimplified }) => {
       </div>
 
       {/* Animations */}
-      <style jsx>{`
+      <style>{`
         @keyframes mobile-bounce {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-10px); }

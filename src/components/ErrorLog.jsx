@@ -328,7 +328,7 @@ const ErrorLog = () => {
         </span>
       </div>
 
-      <style jsx>{`
+      <style>{`
         ::-webkit-scrollbar {
           width: 6px;
         }

@@ -229,7 +229,7 @@ const About = () => {
       </div>
 
       {/* Animation styles */}
-      <style jsx>{`
+      <style>{`
         @keyframes gradientShift {
           0%, 100% { opacity: 0.5; }
           50% { opacity: 0.8; }

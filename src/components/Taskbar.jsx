@@ -120,6 +120,37 @@ const Taskbar = ({ openWindow, windows, activeWindowId, addNotification }) => {
     setSearchTerm('');
   };
 
+  // Phase 5: Sound control functions
+  const handleToggleSound = () => {
+    // Toggle sound on/off
+    if (typeof window !== 'undefined' && window.soundManager) {
+      if (soundVolume > 0) {
+        setSoundVolume(0);
+        window.soundManager.disable();
+      } else {
+        setSoundVolume(0.5);
+        window.soundManager.enable();
+        window.soundManager.setVolume(0.5);
+      }
+    }
+    // Play click sound
+    window.soundManager.play('click');
+  };
+
+  const handleVolumeSliderClick = (e) => {
+    e.stopPropagation(); // Prevent toggle when adjusting volume
+    const newVolume = parseFloat(e.target.value);
+    setSoundVolume(newVolume);
+    if (typeof window !== 'undefined' && window.soundManager) {
+      if (newVolume === 0) {
+        window.soundManager.disable();
+      } else {
+        window.soundManager.enable();
+        window.soundManager.setVolume(newVolume);
+      }
+    }
+  };
+
   // Phase 5: Handle custom keyboard shortcuts
   useEffect(() => {
     const handleOpenStartMenu = () => {
@@ -132,44 +163,18 @@ const Taskbar = ({ openWindow, windows, activeWindowId, addNotification }) => {
       }
     };
 
-    const handleToggleSound = () => {
-      // Toggle sound on/off
-      if (typeof window !== 'undefined' && window.soundManager) {
-        if (soundVolume > 0) {
-          setSoundVolume(0);
-          window.soundManager.disable();
-        } else {
-          setSoundVolume(0.5);
-          window.soundManager.enable();
-          window.soundManager.setVolume(0.5);
-        }
-      }
-      // Play click sound
-      window.soundManager.play('click');
-    };
-
-    const handleVolumeSliderClick = (e) => {
-      e.stopPropagation(); // Prevent toggle when adjusting volume
-      const newVolume = parseFloat(e.target.value);
-      setSoundVolume(newVolume);
-      if (typeof window !== 'undefined' && window.soundManager) {
-        if (newVolume === 0) {
-          window.soundManager.disable();
-        } else {
-          window.soundManager.enable();
-          window.soundManager.setVolume(newVolume);
-        }
-      }
+    const handleToggleSoundShortcut = () => {
+      handleToggleSound();
     };
 
     document.addEventListener('open-start-menu', handleOpenStartMenu);
     document.addEventListener('escape-pressed', handleCloseMenus);
-    document.addEventListener('toggle-sound', handleToggleSound);
+    document.addEventListener('toggle-sound', handleToggleSoundShortcut);
     
     return () => {
       document.removeEventListener('open-start-menu', handleOpenStartMenu);
       document.removeEventListener('escape-pressed', handleCloseMenus);
-      document.removeEventListener('toggle-sound', handleToggleSound);
+      document.removeEventListener('toggle-sound', handleToggleSoundShortcut);
     };
   }, [isStartMenuOpen, soundVolume]);
 

@@ -232,7 +232,7 @@ const Skills = () => {
       </div>
 
       {/* Animation styles */}
-      <style jsx>{`
+      <style>{`
         @keyframes scanline {
           0% { transform: translateY(-100%); }
           100% { transform: translateY(420px); }

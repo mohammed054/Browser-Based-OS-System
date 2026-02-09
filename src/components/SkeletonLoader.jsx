@@ -229,7 +229,7 @@ const SkeletonLoader = ({ width, height, type = 'window' }) => {
         Loading...
       </div>
 
-      <style jsx>{`
+      <style>{`
         @keyframes skeleton-shimmer {
           0% { background-position: -200% 0; }
           100% { background-position: 200% 0; }

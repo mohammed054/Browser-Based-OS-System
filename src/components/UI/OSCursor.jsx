@@ -167,9 +167,8 @@ const OSCursor = () => {
     }
   }, []);
 
-  // Always render cursor (no visibility null check)
+  // Always render cursor with guaranteed visibility
   const getCursorSVG = () => {
-    // Temporarily return simple arrow for debugging
     return (
       <svg 
         xmlns="http://www.w3.org/2000/svg"
@@ -178,19 +177,35 @@ const OSCursor = () => {
         viewBox="0 0 24 24"
         shapeRendering="crispEdges"
         className="cursor-svg"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: 999999,
+          pointerEvents: 'none'
+        }}
       >
         {/* Shadow / outline */}
         <path
           d="M4 2 L4 18 L7.5 14.5 L10 22 L12.5 21 L10 13.5 L14 13 Z"
-            fill="#0B0F14"
-            transform="translate(1,1)"
-            className="cursor-shadow"
+          fill="#0B0F14"
+          transform="translate(1,1)"
+          className="cursor-shadow"
+          style={{
+            filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5))'
+          }}
         />
         
         {/* Main cursor */}
         <path
           d="M4 2 L4 18 L7.5 14.5 L10 22 L12.5 21 L10 13.5 L14 13 Z"
           fill="#E5E7EB"
+          className="cursor-main"
+          style={{
+            filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))'
+          }}
         />
       </svg>
     );

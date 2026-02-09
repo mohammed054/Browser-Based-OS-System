@@ -14,7 +14,7 @@ import './CustomCursor.css';
  */
 const CustomCursor = () => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(true); // Always visible for desktop OS simulation
   const [isHovering, setIsHovering] = useState(false);
   const [isClicking, setIsClicking] = useState(false);
   const [cursorType, setCursorType] = useState('default');
@@ -69,7 +69,7 @@ const CustomCursor = () => {
     };
 
     const handleMouseEnter = () => setIsVisible(true);
-    const handleMouseLeave = () => setIsVisible(false);
+    const handleMouseLeave = () => setIsVisible(true); // Keep visible for desktop OS
     const handleMouseDown = () => setIsClicking(true);
     const handleMouseUp = () => setIsClicking(false);
 

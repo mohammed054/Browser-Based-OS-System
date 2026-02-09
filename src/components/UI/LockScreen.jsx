@@ -146,7 +146,7 @@ const LockScreen = ({ isVisible, onUnlock, currentTime, currentDate }) => {
         </div>
       )}
 
-      <style jsx>{`
+      <style>{`
         .shake {
           animation: shake 0.5s;
         }

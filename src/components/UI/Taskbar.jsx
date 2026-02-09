@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { theme } from '../../theme';
 import Button from './Button';
 import Input from './Input';
+import { soundManager } from '../../utils/SoundManager';
 
 /**
  * Redesigned Taskbar Component
@@ -12,6 +13,8 @@ const Taskbar = ({ openWindow }) => {
   const [currentDate, setCurrentDate] = useState('');
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSoundEnabled, setIsSoundEnabled] = useState(true);
+  const [volume, setVolume] = useState(0.3);
 
   const apps = [
     { name: 'Calculator', image: './images/calculator.apng' },
@@ -47,10 +50,16 @@ const Taskbar = ({ openWindow }) => {
   }, []);
 
   const toggleStartMenu = () => {
+    if (isSoundEnabled) {
+      soundManager.play('click');
+    }
     setIsStartMenuOpen(!isStartMenuOpen);
   };
 
   const handleAppClick = (appType) => {
+    if (isSoundEnabled) {
+      soundManager.play('windowOpen');
+    }
     openWindow(appType);
     setIsStartMenuOpen(false);
     setSearchTerm('');
@@ -58,6 +67,30 @@ const Taskbar = ({ openWindow }) => {
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
+  };
+
+  const handleToggleSound = () => {
+    const newSoundState = !isSoundEnabled;
+    setIsSoundEnabled(newSoundState);
+    if (newSoundState) {
+      soundManager.enable();
+      soundManager.play('success');
+    } else {
+      soundManager.disable();
+      soundManager.play('windowClose');
+    }
+  };
+
+  const handleVolumeSliderClick = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const width = rect.width;
+    const newVolume = Math.max(0, Math.min(1, x / width));
+    setVolume(newVolume);
+    soundManager.setVolume(newVolume);
+    if (isSoundEnabled) {
+      soundManager.play('hover');
+    }
   };
 
   const filteredApps = apps.filter(app =>
@@ -114,6 +147,9 @@ const Taskbar = ({ openWindow }) => {
                     marginBottom: theme.spacing.xs
                   }}
                   onMouseEnter={(e) => {
+                    if (isSoundEnabled) {
+                      soundManager.play('hover');
+                    }
                     e.currentTarget.style.backgroundColor = theme.colors.hover;
                     e.currentTarget.style.transform = 'translateX(4px)';
                   }}
@@ -190,7 +226,51 @@ const Taskbar = ({ openWindow }) => {
           <div style={{ display: 'flex', gap: theme.spacing.sm }}>
             <span className="tray-icon" style={{ fontSize: theme.typography.sizes.lg }}>📶</span>
             <span className="tray-icon" style={{ fontSize: theme.typography.sizes.lg }}>🔋</span>
-            <span className="tray-icon" style={{ fontSize: theme.typography.sizes.lg }}>🔊</span>
+            <Button
+              variant="ghost"
+              onClick={handleToggleSound}
+              style={{
+                padding: theme.spacing.xs,
+                borderRadius: theme.dimensions.buttonBorderRadius,
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+              onMouseEnter={(e) => {
+                if (isSoundEnabled) {
+                  soundManager.play('hover');
+                }
+              }}
+            >
+              <span style={{ fontSize: theme.typography.sizes.lg }}>
+                {isSoundEnabled ? '🔊' : '🔇'}
+              </span>
+            </Button>
+            <div 
+              style={{
+                width: '80px',
+                height: '4px',
+                backgroundColor: theme.colors.accentPrimary,
+                borderRadius: '2px',
+                position: 'relative',
+                cursor: 'pointer'
+              }}
+              onClick={handleVolumeSliderClick}
+            >
+              <div 
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: '-4px',
+                  width: '8px',
+                  height: '12px',
+                  backgroundColor: theme.colors.textPrimary,
+                  borderRadius: '4px'
+                }}
+              />
+            </div>
           </div>
           <div style={{ width: '1px', height: '24px', backgroundColor: theme.colors.accentPrimary, opacity: 0.3 }}></div>
           <div className="clock" style={{ textAlign: 'right' }}>

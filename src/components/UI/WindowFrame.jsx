@@ -454,7 +454,7 @@ const WindowFrame = ({
             color: theme.colors.textPrimary
           }}
         >
-          <style jsx>{`
+          <style>{`
             .window-body::-webkit-scrollbar {
               width: 8px;
             }

@@ -300,7 +300,7 @@ const HeroWindow = ({ isVisible, onClose, openWindow }) => {
       </div>
 
       {/* CSS Animation for rocket bob */}
-      <style jsx>{`
+      <style>{`
         @keyframes rocket-bob {
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-10px); }

@@ -739,7 +739,7 @@ const Desktop = ({
       ))}
       
       {/* CSS Animations */}
-      <style jsx>{`
+      <style>{`
         @keyframes gradient-shift {
           0% { background-position: 0% 0%; }
           50% { background-position: 100% 100%; }
