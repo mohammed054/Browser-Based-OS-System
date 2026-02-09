@@ -723,7 +723,8 @@ const getComponent = (appType) => {
   }
 
   // Phase 5: Show mobile fallback on mobile devices
-  if (!mobileWarningAcknowledged) {
+  // Temporarily bypass mobile fallback for testing
+  if (!mobileWarningAcknowledged && false) {
     return (
       <>
         <MobileFallback

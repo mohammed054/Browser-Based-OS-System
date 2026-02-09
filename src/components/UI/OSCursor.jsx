@@ -177,7 +177,7 @@ const OSCursor = () => {
             width="24"
             height="24"
             viewBox="0 0 24 24"
-            shape-rendering="crispEdges"
+            shapeRendering="crispEdges"
             className="cursor-svg"
           >
             {/* Shadow / outline */}
@@ -212,7 +212,7 @@ const OSCursor = () => {
             width="24"
             height="24"
             viewBox="0 0 24 24"
-            shape-rendering="crispEdges"
+            shapeRendering="crispEdges"
             className="cursor-svg"
           >
             {/* Shadow / outline */}
@@ -251,7 +251,7 @@ const OSCursor = () => {
             width="24"
             height="24"
             viewBox="0 0 24 24"
-            shape-rendering="crispEdges"
+            shapeRendering="crispEdges"
             className="cursor-svg"
           >
             {/* Shadow / outline */}
@@ -293,7 +293,7 @@ const OSCursor = () => {
             width="24"
             height="24"
             viewBox="0 0 24 24"
-            shape-rendering="crispEdges"
+            shapeRendering="crispEdges"
             className="cursor-svg"
           >
             {/* Shadow / outline */}
