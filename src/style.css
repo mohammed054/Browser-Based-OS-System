@@ -60,6 +60,8 @@
 body {
   width: 100vw;
   height: 100vh;
+  margin: 0;
+  padding: 0;
   overflow: hidden;
   font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   color: white;
@@ -68,6 +70,17 @@ body {
   background-attachment: fixed;
   image-rendering: -webkit-optimize-contrast;
   image-rendering: crisp-edges;
+  /* Override any conflicting styles */
+  display: block !important;
+  place-items: unset !important;
+}
+
+/* Ensure root element doesn't interfere */
+#root {
+  width: 100%;
+  height: 100%;
+  display: block !important;
+  place-items: unset !important;
 }
 
 /* Desktop area */

@@ -1,7 +1,8 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
-import './style.css'   // ⚡ Import your CSS here
+import './style.css'   // OS styles
+// Remove conflicting index.css import
 
 // Debug: Check if root element exists
 const rootElement = document.getElementById('root')
