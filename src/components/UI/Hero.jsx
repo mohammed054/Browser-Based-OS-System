@@ -1,13 +1,15 @@
 import React from 'react';
 import { theme } from '../../theme';
-import Button from './Button';
-import Rocket from './Rocket';
+// import Button from './Button';
+// import Rocket from './Rocket';
 
 /**
  * Hero Component
  * Modern hero section with animated rocket and call-to-action
  */
 const Hero = ({ onStart }) => {
+  console.log('Hero component rendering, onStart:', typeof onStart)
+  
   return (
     <div style={{
       position: 'relative',
@@ -43,10 +45,10 @@ const Hero = ({ onStart }) => {
         animation: 'gridMove 20s linear infinite'
       }}></div>
 
-      {/* Floating Rockets */}
-      <Rocket size={48} style={{ top: '10%', left: '20%' }} />
+      {/* Floating Rockets - Temporarily disabled for testing */}
+      {/* <Rocket size={48} style={{ top: '10%', left: '20%' }} />
       <Rocket size={32} style={{ top: '70%', right: '15%' }} />
-      <Rocket size={64} style={{ bottom: '20%', left: '80%' }} />
+      <Rocket size={64} style={{ bottom: '20%', left: '80%' }} /> */}
 
       {/* Main Content */}
       <div style={{
@@ -88,29 +90,35 @@ const Hero = ({ onStart }) => {
           justifyContent: 'center',
           animation: 'fadeInUp 1s ease-out 0.2s both'
         }}>
-          <Button
-            variant="primary"
+          {/* Temporarily simplified buttons for testing */}
+          <button
             onClick={onStart}
             style={{
               fontSize: theme.typography.sizes.lg,
               padding: `${theme.spacing.lg} ${theme.spacing['4xl']}`,
               borderRadius: theme.dimensions.buttonBorderRadius,
-              boxShadow: theme.shadows.buttonHover
+              backgroundColor: theme.colors.accentPrimary,
+              color: theme.colors.textInverted,
+              border: 'none',
+              cursor: 'pointer'
             }}
           >
             Launch OS
-          </Button>
-          <Button
-            variant="secondary"
+          </button>
+          <button
             onClick={() => window.open('https://github.com/mohammed054/Browser-Based-OS-System', '_blank')}
             style={{
               fontSize: theme.typography.sizes.lg,
               padding: `${theme.spacing.lg} ${theme.spacing['4xl']}`,
-              borderRadius: theme.dimensions.buttonBorderRadius
+              borderRadius: theme.dimensions.buttonBorderRadius,
+              backgroundColor: theme.colors.panel,
+              color: theme.colors.textPrimary,
+              border: `1px solid ${theme.colors.accentPrimary}`,
+              cursor: 'pointer'
             }}
           >
             View Source
-          </Button>
+          </button>
         </div>
 
         <div style={{

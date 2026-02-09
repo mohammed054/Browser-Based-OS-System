@@ -32,6 +32,9 @@ const ErrorLog = lazy(() => import('./components/ErrorLog'))
 function App() {
   const [showHero, setShowHero] = useState(true);
   
+  // Debug: Log component state
+  console.log('App render - showHero:', showHero)
+  
   // Phase 3 State Management
   const [notifications, setNotifications] = useState([]);
   const [isLocked, setIsLocked] = useState(false);
