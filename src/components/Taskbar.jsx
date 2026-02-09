@@ -253,7 +253,21 @@ const Taskbar = ({ openWindow, windows, activeWindowId, addNotification }) => {
               cursor: 'pointer'
             }}
             title={`Sound Effects Volume: ${Math.round(soundVolume * 100)}%`}
-            onClick={handleToggleSound}
+            onClick={() => {
+              // Toggle sound on/off
+              if (typeof window !== 'undefined' && window.soundManager) {
+                if (soundVolume > 0) {
+                  setSoundVolume(0);
+                  window.soundManager.disable();
+                } else {
+                  setSoundVolume(0.5);
+                  window.soundManager.enable();
+                  window.soundManager.setVolume(0.5);
+                }
+                // Play click sound
+                window.soundManager.play('click');
+              }
+            }}
           >
             <span style={{ 
               fontSize: '16px', 
