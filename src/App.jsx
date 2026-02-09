@@ -7,7 +7,7 @@ import LockScreen from './components/UI/LockScreen'
 import ErrorBoundary from './components/ErrorBoundary'
 import Hero from './components/UI/Hero'
 import { keyboardManager } from './utils/KeyboardManager'
-import CustomCursor from './components/CustomCursor'
+import OSCursor from './components/UI/OSCursor'
 import { soundManager } from './utils/SoundManager'
 import { MobileFallback, SimplifiedPortfolio } from './components/MobileFallback'
 
@@ -733,7 +733,7 @@ const getComponent = (appType) => {
             setShowSimplified(true);
           }}
         />
-        <CustomCursor />
+        <OSCursor />
       </>
     );
   }
@@ -747,8 +747,8 @@ const getComponent = (appType) => {
 
 return (
     <>
-      {/* Phase 5 Custom Cursor */}
-      <CustomCursor />
+      {/* OS Cursor System */}
+      <OSCursor />
       
       <div className={`app ${theme}`}>
         <Desktop
