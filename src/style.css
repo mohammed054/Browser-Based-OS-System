@@ -76,6 +76,14 @@ body {
   place-items: unset !important;
 }
 
+/* Desktop background - use wallpaper for desktop area */
+.desktop {
+  background: url('/images/wallpaper.png') center/cover no-repeat;
+  background-attachment: fixed;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
 /* Ensure root element doesn't interfere */
 #root {
   width: 100%;

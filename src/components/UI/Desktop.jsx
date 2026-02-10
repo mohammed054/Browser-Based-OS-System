@@ -309,14 +309,7 @@ const Desktop = ({
           width: '100vw',
           height: 'calc(100vh - 48px)', // Account for taskbar
           backgroundColor: theme.colors.background,
-          backgroundImage: `
-            radial-gradient(circle at 25% 25%, rgba(56, 189, 248, 0.15) 0%, transparent 50%),
-            radial-gradient(circle at 75% 75%, rgba(168, 85, 247, 0.15) 0%, transparent 50%),
-            radial-gradient(circle at 50% 50%, rgba(17, 24, 39, 0.03) 0%, transparent 70%)
-          `,
-          backgroundSize: '200% 200%',
-          backgroundPosition: '0% 0%',
-          animation: 'gradient-shift 15s ease infinite',
+          background: 'url("/images/wallpaper.png") center/cover no-repeat',
           overflow: 'hidden'
         }}
       >

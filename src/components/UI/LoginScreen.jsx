@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import OSPopup from './OSPopup';
 import './LoginScreen.css';
 
@@ -8,6 +8,28 @@ const LoginScreen = ({ onLogin, currentTime, currentDate }) => {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showErrorPopup, setShowErrorPopup] = useState(false);
+  
+  const passwordInputRef = useRef(null);
+
+  // Focus management function
+  const ensureFocus = () => {
+    const passwordInput = passwordInputRef.current;
+    if (passwordInput && document.activeElement !== passwordInput) {
+      passwordInput.focus();
+      passwordInput.select();
+    }
+  };
+
+  useEffect(() => {
+    // Auto-focus password input when form appears and maintain focus
+    if (showForm && !isSubmitting) {
+      const passwordInput = passwordInputRef.current;
+      if (passwordInput && document.activeElement !== passwordInput) {
+        passwordInput.focus();
+        passwordInput.select();
+      }
+    }
+  }, [showForm, isSubmitting]);
 
   useEffect(() => {
     // Play login screen appearance sound
@@ -18,10 +40,53 @@ const LoginScreen = ({ onLogin, currentTime, currentDate }) => {
     }
   }, []);
 
-  const handleClick = () => {
-    setShowForm(true);
+  // Enhanced password change handler with auto-refocus
+  const handlePasswordChange = (e) => {
+    setPassword(e.target.value);
+    if (error) setError('');
+    
+    // Only re-focus if input is not already focused to prevent text replacement
+    const passwordInput = passwordInputRef.current;
+    if (passwordInput && document.activeElement !== passwordInput) {
+      setTimeout(() => {
+        passwordInput.focus();
+        passwordInput.select();
+      }, 100);
+    }
   };
-  
+
+  // Force state update in separate tick to bypass any React batching
+  const handleClick = (e) => {
+    console.log('🔍 LOGIN SCREEN CLICKED', password);
+    e.stopPropagation();
+    
+    // Force state update in separate tick to bypass any React batching
+    setTimeout(() => {
+      setShowForm(true);
+      // Force re-render after state update
+    }, 0);
+    
+    // Ensure focus in next tick
+    setTimeout(() => {
+      ensureFocus();
+    }, 50);
+  };
+
+  // Handle Enter key to show form
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      if (!showForm) {
+        handleClick(e);
+      }
+    }
+  };
+
+  const handleFormClick = (e) => {
+    e.stopPropagation();
+    ensureFocus();
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
@@ -30,10 +95,10 @@ const LoginScreen = ({ onLogin, currentTime, currentDate }) => {
     setError('');
     
     // Simulate realistic authentication delay (800-1200ms)
-    const authDelay = 800 + Math.random() * 400; // Random between 800-1200ms
+    const authDelay = 800 + Math.random() * 400;
     await new Promise(resolve => setTimeout(resolve, authDelay));
     
-    if (password === 'mohammed' || password === 'portfolio' || password === 'admin') {
+    if (password === 'mohammed' || password === 'portfolio' || password === 'admin' || password === 'guest' || password === 'user' || password === 'demo') {
       // Play success sound
       if (typeof window !== 'undefined' && window.soundManager) {
         window.soundManager.play('windowOpen');
@@ -51,20 +116,36 @@ const LoginScreen = ({ onLogin, currentTime, currentDate }) => {
         window.soundManager.play('error');
       }
       
-      setError('Incorrect password');
       setShowErrorPopup(true);
       setIsSubmitting(false);
+      
+      // Clear password field after error
+      setTimeout(() => {
+        setPassword('');
+        setTimeout(() => setError(''), 100);
+        
+        // Re-focus after clearing
+        const passwordInput = passwordInputRef.current;
+        if (passwordInput) {
+          passwordInput.focus();
+          passwordInput.select();
+        }
+      }, 50);
     }
   };
 
-  const handlePasswordChange = (e) => {
-    setPassword(e.target.value);
-    if (error) setError('');
+  // Handle Enter key to submit form when form is visible
+  const handleFormKeyPress = (e) => {
+    if (e.key === 'Enter' && showForm && password && !isSubmitting) {
+      e.preventDefault();
+      handleSubmit(e);
+    }
   };
 
   if (!showForm) {
     return (
-      <div className="login-screen" onClick={handleClick}>
+      <div className="login-screen" onClick={handleClick} onKeyPress={handleKeyPress} tabIndex={0}>
+        {/* Lock screen view */}
         <div className="login-lock">
           <div className="login-clock">{currentTime || '00:00'}</div>
           <div className="login-date">{currentDate || new Date().toLocaleDateString('en-US', { 
@@ -75,22 +156,32 @@ const LoginScreen = ({ onLogin, currentTime, currentDate }) => {
           })}</div>
           <div className="login-hint">Click to sign in</div>
         </div>
-        
-        <div className="system-info">
-          BrowserOS Portfolio v1.0
-        </div>
       </div>
     );
   }
 
   return (
-    <div className="login-screen">
-      <div className="login-form" onClick={(e) => e.stopPropagation()}>
-        <div className="login-header">
-          <div className="login-avatar">MH</div>
-          <div className="login-title">mohammed</div>
-          <div className="login-subtitle">BrowserOS Portfolio</div>
-        </div>
+    <div className="login-screen" onClick={handleClick} onKeyPress={handleKeyPress} tabIndex={0}>
+      {/* Lock screen view */}
+      <div className="login-lock">
+        <div className="login-clock">{currentTime || '00:00'}</div>
+        <div className="login-date">{currentDate || new Date().toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          })}</div>
+          <div className="login-hint">Click to sign in</div>
+      </div>
+      
+      {/* Login form view */}
+      {showForm && (
+        <div className="login-form" onClick={handleFormClick} onKeyPress={handleFormKeyPress}>
+          <div className="login-header">
+            <div className="login-avatar">MH</div>
+            <div className="login-title">mohammed</div>
+            <div className="login-subtitle">BrowserOS Portfolio</div>
+          </div>
         
           <form onSubmit={handleSubmit}>
             <div className="login-input-group">
@@ -110,16 +201,25 @@ const LoginScreen = ({ onLogin, currentTime, currentDate }) => {
                 onChange={handlePasswordChange}
                 autoFocus
                 disabled={isSubmitting}
+                ref={passwordInputRef}
                 style={{ 
-                  zIndex: 99998, /* Highest priority - above everything */
+                  zIndex: 99998, /* Highest priority */
                   position: 'relative',
-                  pointerEvents: 'auto' /* Explicitly enable interactions */
+                  pointerEvents: 'auto', /* Explicitly enable */
+                  border: '2px solid #38bdf8',
+                  borderRadius: '4px',
+                  padding: '12px',
+                  background: '#0b0e14',
+                  color: '#eaeaea',
+                  fontSize: '16px',
+                  fontFamily: 'monospace',
+                  outline: 'none'
                 }}
               />
               {error && (
                 <div className="login-error">
                   {error}
-                  <div className="login-error-tip">💡 Password is case-sensitive</div>
+                  <div className="login-error-tip">💡 Try: mohammed, portfolio, admin, guest, user, or demo</div>
                 </div>
               )}
               {isSubmitting && (
@@ -130,19 +230,27 @@ const LoginScreen = ({ onLogin, currentTime, currentDate }) => {
               )}
             </div>
           
-          <button 
-            type="submit" 
-            className="login-button" 
-            disabled={!password || isSubmitting}
-          >
-            {isSubmitting ? 'Signing In...' : 'Sign In'}
-          </button>
-        </form>
-      </div>
-      
-      <div className="system-info">
-        BrowserOS Portfolio v1.0
-      </div>
+            <button 
+              type="submit" 
+              className="login-button" 
+              disabled={!password || isSubmitting}
+              style={{
+                background: 'linear-gradient(135deg, #38bdf8, #0ea5e9)',
+                border: '2px solid #38bdf8',
+                borderRadius: '4px',
+                padding: '8px 16px',
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: password && !isSubmitting ? 'pointer' : 'not-allowed',
+                boxShadow: '0 4px 12px rgba(56, 189, 248, 0.3)'
+              }}
+            >
+              {isSubmitting ? 'Signing In...' : 'Sign In'}
+            </button>
+          </form>
+        </div>
+      )}
       
       {/* OS-Style Error Popup */}
       <OSPopup
@@ -151,7 +259,6 @@ const LoginScreen = ({ onLogin, currentTime, currentDate }) => {
         message="Incorrect password. Please try again."
         onClose={() => {
           setShowErrorPopup(false);
-          setPassword(''); // Clear password input
           setTimeout(() => setError(''), 100);
         }}
         type="error"
