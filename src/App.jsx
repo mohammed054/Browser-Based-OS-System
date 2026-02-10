@@ -4,8 +4,8 @@ import Desktop from './components/UI/Desktop'
 import Taskbar from './components/Taskbar'
 import NotificationCenter from './components/UI/NotificationCenter'
 import LockScreen from './components/UI/LockScreen'
+import BootScreen from './components/UI/BootScreen'
 import ErrorBoundary from './components/ErrorBoundary'
-import Hero from './components/UI/Hero'
 import { keyboardManager } from './utils/KeyboardManager'
 import OSCursor from './components/UI/OSCursor'
 import { soundManager } from './utils/SoundManager'
@@ -30,10 +30,12 @@ const Resume = lazy(() => import('./components/Resume'))
 const ErrorLog = lazy(() => import('./components/ErrorLog'))
 
 function App() {
-  const [showHero, setShowHero] = useState(true);
+  // NEW BOOT FLOW STATE MANAGEMENT
+  const [systemState, setSystemState] = useState('boot'); // 'boot' | 'login' | 'desktop'
+  const [loginState, setLoginState] = useState('idle'); // 'idle' | 'signing-in' | 'authenticating'
   
   // Debug: Log component state
-  console.log('App render - showHero:', showHero)
+  console.log('App render - systemState:', systemState)
   
   // Phase 3 State Management
   const [notifications, setNotifications] = useState([]);
@@ -155,9 +157,27 @@ const icons = [
     }
   }, []);
 
-  const handleStartOS = () => {
-    setShowHero(false);
-  };
+  // NEW BOOT FLOW HANDLERS
+  const handleBootComplete = useCallback(() => {
+    setTimeout(() => {
+      setSystemState('login');
+      setTimeout(() => {
+        setLoginState('signing-in');
+        setTimeout(() => {
+          setLoginState('authenticating');
+          setTimeout(() => {
+            setSystemState('desktop');
+            setLoginState('idle');
+          }, 500);
+        }, 300);
+      }, 1000); // 800-1200ms auto-login delay
+    }, 100); // Brief pause before showing login
+  }, []);
+
+  const handleAutoLogin = useCallback(() => {
+    // Guest credentials are pre-filled, this just completes the flow
+    return Promise.resolve(true);
+  }, []);
 
   const openWindow = (appType) => {
     // Phase 5: Check if already loading
@@ -718,8 +738,25 @@ const getComponent = (appType) => {
     children: renderComponent(window)
   }));
 
-  if (showHero) {
-    return <Hero onStart={handleStartOS} />;
+  // NEW BOOT FLOW RENDER LOGIC
+  if (systemState === 'boot') {
+    return <BootScreen onBootComplete={handleBootComplete} />;
+  }
+  
+  if (systemState === 'login') {
+    return (
+      <>
+        <OSCursor />
+        <LockScreen
+          isVisible={true}
+          onUnlock={handleAutoLogin}
+          currentTime={currentTime}
+          currentDate={currentDate}
+          autoLogin={true}
+          loginState={loginState}
+        />
+      </>
+    );
   }
 
   // Phase 5: Show mobile fallback on mobile devices

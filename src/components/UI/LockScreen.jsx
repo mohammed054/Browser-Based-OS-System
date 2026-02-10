@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const LockScreen = ({ isVisible, onUnlock, currentTime, currentDate }) => {
+const LockScreen = ({ isVisible, onUnlock, currentTime, currentDate, autoLogin = false, loginState = 'idle' }) => {
   const [showLogin, setShowLogin] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -11,8 +11,16 @@ const LockScreen = ({ isVisible, onUnlock, currentTime, currentDate }) => {
       setPassword('');
       setError('');
       setShowLogin(false);
+      
+      // Auto-login mode
+      if (autoLogin) {
+        setTimeout(() => setShowLogin(true), 500); // Show login form immediately
+        if (loginState === 'signing-in' || loginState === 'authenticating') {
+          setPassword('guest'); // Pre-fill guest credentials
+        }
+      }
     }
-  }, [isVisible]);
+  }, [isVisible, autoLogin, loginState]);
 
   const handleClick = () => {
     setShowLogin(true);
@@ -21,11 +29,20 @@ const LockScreen = ({ isVisible, onUnlock, currentTime, currentDate }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Fake authentication - accept 'portfolio' as password
-    if (password === 'portfolio') {
+    // Auto-login mode or guest credentials
+    if (autoLogin || password === 'guest') {
+      // Show signing in state briefly
+      if (autoLogin) {
+        setTimeout(() => {
+          onUnlock('guest');
+        }, 200);
+      } else {
+        onUnlock(password);
+      }
+    } else if (password === 'portfolio') { // Fallback for manual login
       onUnlock(password);
     } else {
-      setError('Incorrect password. Hint: "portfolio"');
+      setError('Incorrect password. Hint: "guest" or "portfolio"');
       setIsShaking(true);
       setTimeout(() => setIsShaking(false), 500);
       
@@ -38,6 +55,16 @@ const LockScreen = ({ isVisible, onUnlock, currentTime, currentDate }) => {
     setPassword(e.target.value);
     if (error) setError('');
   };
+
+  // Auto-submit form in auto-login mode
+  useEffect(() => {
+    if (autoLogin && showLogin && loginState === 'authenticating') {
+      const timer = setTimeout(() => {
+        handleSubmit({ preventDefault: () => {} });
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [autoLogin, showLogin, loginState]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Escape') {
@@ -77,21 +104,54 @@ const LockScreen = ({ isVisible, onUnlock, currentTime, currentDate }) => {
           <div className="login-form">
             <div className="login-header">
               <div className="login-avatar">MH</div>
-              <div className="login-title">Welcome Back</div>
-              <div className="login-subtitle">Mohammed Hassoun</div>
+              <div className="login-title">{autoLogin ? 'Mohammed Hassoun' : 'Welcome Back'}</div>
+              <div className="login-subtitle">{autoLogin ? 'Browser-Based OS Portfolio' : 'Mohammed Hassoun'}</div>
             </div>
 
             <form onSubmit={handleSubmit}>
+              {autoLogin && (
+                <div className="login-input-group" style={{ marginBottom: '12px' }}>
+                  <input
+                    type="text"
+                    className="login-input"
+                    placeholder="Username"
+                    value="guest"
+                    disabled
+                    style={{ marginBottom: '8px' }}
+                  />
+                </div>
+              )}
               <div className="login-input-group">
                 <input
                   type="password"
                   className={`login-input ${error ? 'error' : ''}`}
-                  placeholder="Enter password"
+                  placeholder={autoLogin ? "Password" : "Enter password"}
                   value={password}
                   onChange={handlePasswordChange}
                   onKeyDown={handleKeyDown}
-                  autoFocus
+                  autoFocus={!autoLogin || loginState !== 'authenticating'}
+                  disabled={autoLogin && loginState === 'authenticating'}
                 />
+                {autoLogin && loginState === 'signing-in' && (
+                  <div style={{
+                    color: '#38bdf8',
+                    fontSize: '12px',
+                    marginTop: '8px',
+                    textAlign: 'center'
+                  }}>
+                    Signing in...
+                  </div>
+                )}
+                {autoLogin && loginState === 'authenticating' && (
+                  <div style={{
+                    color: '#34d399',
+                    fontSize: '12px',
+                    marginTop: '8px',
+                    textAlign: 'center'
+                  }}>
+                    Authenticating...
+                  </div>
+                )}
                 {error && (
                   <div style={{
                     color: '#ef4444',
@@ -107,9 +167,9 @@ const LockScreen = ({ isVisible, onUnlock, currentTime, currentDate }) => {
               <button
                 type="submit"
                 className="login-button"
-                disabled={!password}
+                disabled={!password || (autoLogin && loginState === 'authenticating')}
               >
-                Unlock
+                {autoLogin ? 'Sign In' : 'Unlock'}
               </button>
             </form>
 
