@@ -5,6 +5,8 @@ import Taskbar from './components/Taskbar'
 import NotificationCenter from './components/UI/NotificationCenter'
 import LockScreen from './components/UI/LockScreen'
 import BootScreen from './components/UI/BootScreen'
+import BlackScreen from './components/UI/BlackScreen'
+import LoginScreen from './components/UI/LoginScreen'
 import ErrorBoundary from './components/ErrorBoundary'
 import { keyboardManager } from './utils/KeyboardManager'
 import OSCursor from './components/UI/OSCursor'
@@ -31,8 +33,8 @@ const ErrorLog = lazy(() => import('./components/ErrorLog'))
 
 function App() {
   // NEW BOOT FLOW STATE MANAGEMENT
-  const [systemState, setSystemState] = useState('boot'); // 'boot' | 'login' | 'desktop'
-  const [loginState, setLoginState] = useState('idle'); // 'idle' | 'signing-in' | 'authenticating'
+  const [systemState, setSystemState] = useState('boot'); // 'boot' | 'black' | 'login' | 'desktop'
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   
   // Debug: Log component state
   console.log('App render - systemState:', systemState)
@@ -159,30 +161,15 @@ const icons = [
 
   // NEW BOOT FLOW HANDLERS
   const handleBootComplete = useCallback(() => {
+    setSystemState('black');
     setTimeout(() => {
       setSystemState('login');
-      setTimeout(() => {
-        setLoginState('signing-in');
-        setTimeout(() => {
-          setLoginState('authenticating');
-          setTimeout(() => {
-            // Trigger desktop transition effects
-            document.body.classList.add('desktop-ready');
-            setSystemState('desktop');
-            setLoginState('idle');
-            // Remove animation class after animation completes
-            setTimeout(() => {
-              document.body.classList.remove('desktop-ready');
-            }, 800);
-          }, 500);
-        }, 300);
-      }, 1000); // 800-1200ms auto-login delay
-    }, 100); // Brief pause before showing login
+    }, 800);
   }, []);
 
-  const handleAutoLogin = useCallback(() => {
-    // Guest credentials are pre-filled, this just completes the flow
-    return Promise.resolve(true);
+  const handleLogin = useCallback(() => {
+    setIsAuthenticated(true);
+    setSystemState('desktop');
   }, []);
 
   const openWindow = (appType) => {
@@ -749,17 +736,18 @@ const getComponent = (appType) => {
     return <BootScreen onBootComplete={handleBootComplete} />;
   }
   
+  if (systemState === 'black') {
+    return <BlackScreen onComplete={() => setSystemState('login')} />;
+  }
+  
   if (systemState === 'login') {
     return (
       <>
         <OSCursor />
-        <LockScreen
-          isVisible={true}
-          onUnlock={handleAutoLogin}
+        <LoginScreen
+          onLogin={handleLogin}
           currentTime={currentTime}
           currentDate={currentDate}
-          autoLogin={true}
-          loginState={loginState}
         />
       </>
     );
@@ -795,7 +783,7 @@ const getComponent = (appType) => {
       <OSCursor />
       
       <div className={`app ${theme}`} style={{
-        opacity: systemState === 'desktop' ? 1 : 0,
+        opacity: isAuthenticated ? 1 : 0,
         transition: 'opacity 0.3s ease-in'
       }}>
         <Desktop

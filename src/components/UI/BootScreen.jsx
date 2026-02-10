@@ -25,7 +25,7 @@ const BootScreen = ({ onBootComplete }) => {
     const bootTimeout = setTimeout(() => {
       clearInterval(logInterval);
       onBootComplete();
-    }, 2500);
+    }, 2000);
 
     return () => {
       clearInterval(logInterval);

@@ -47,14 +47,15 @@
   --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.2);
   --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.25);
   
-  /* Z-Index Scale */
+/* Z-Index Scale */
   --z-desktop: 1;
   --z-window: 100;
   --z-context-menu: 1000;
   --z-start-menu: 1001;
   --z-notification: 1002;
+  --z-login-screen: 9998;
   --z-lock-screen: 9999;
-  --z-taskbar: 9998;
+  --z-taskbar: 9997;
 }
 
 body {
@@ -91,20 +92,10 @@ body {
   width: 100%;
   height: calc(100% - 48px);
   user-select: none;
-  opacity: 0;
-  animation: desktopFadeIn 0.8s ease-out 0.3s forwards;
+  opacity: 1;
 }
 
-@keyframes desktopFadeIn {
-  from {
-    opacity: 0;
-    transform: scale(1.02);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
+
 
 /* Desktop background transition effect */
 body.desktop-ready {
@@ -878,8 +869,8 @@ body.desktop-ready {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(20px);
+  background: rgba(0, 0, 0, 1);
+  backdrop-filter: none;
   display: flex;
   flex-direction: column;
   align-items: center;
