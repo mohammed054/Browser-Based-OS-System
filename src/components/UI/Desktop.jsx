@@ -1,8 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { theme } from '../../theme';
 import DesktopIcon from './DesktopIcon';
-import WindowFrame from './WindowFrame';
-import HeroWindow from './HeroWindow';
+import WindowFrame from '../WindowFrame';
 import SecretWindow from '../SecretWindow';
 
 /**
@@ -29,8 +28,6 @@ const Desktop = ({
   const [selectionRect, setSelectionRect] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const [selectionStart, setSelectionStart] = useState({ x: 0, y: 0 });
   const [contextMenu, setContextMenu] = useState(null); // {x, y} position or null
-  const [heroWindowVisible, setHeroWindowVisible] = useState(false);
-  const [heroIconPosition] = useState({ x: 50, y: 50 }); // Hero icon position
   const desktopRef = useRef(null);
   
   // Phase 5 Easter Eggs State
@@ -42,14 +39,6 @@ const Desktop = ({
 
   const handleIconClick = (icon) => {
     openWindow(icon.label);
-  };
-
-  const handleHeroIconClick = () => {
-    setHeroWindowVisible(true);
-  };
-
-  const handleHeroWindowClose = () => {
-    setHeroWindowVisible(false);
   };
 
   const handleIconContextMenu = (e, icon) => {
@@ -300,13 +289,6 @@ const Desktop = ({
 
   return (
     <>
-      {/* Hero Window */}
-      <HeroWindow 
-        isVisible={heroWindowVisible}
-        onClose={handleHeroWindowClose}
-        openWindow={openWindow}
-      />
-      
       {/* Phase 5 Secret Window */}
       <SecretWindow 
         isVisible={secretWindowVisible}
@@ -339,42 +321,7 @@ const Desktop = ({
         }}
       >
       <div className="desktop-icons" style={{ position: 'relative', width: '100%', height: '100%' }}>
-        {/* Hero Rocket Icon */}
-        <div
-          className="hero-icon"
-          onClick={handleHeroIconClick}
-          onMouseDown={handleLogoMouseDown}
-          style={{
-            position: 'absolute',
-            left: heroIconPosition.x,
-            top: heroIconPosition.y,
-            width: '64px',
-            height: '64px',
-            fontSize: '48px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(168, 85, 247, 0.2))',
-            border: `2px solid ${theme.colors.accentPrimary}50`,
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)',
-            animation: 'rocket-bob 3s ease-in-out infinite, glow-pulse 2s ease-in-out infinite',
-            transition: theme.animations.hover,
-            zIndex: theme.zIndex.desktop + 1
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'scale(1.1)';
-            e.currentTarget.style.boxShadow = `0 0 20px ${theme.colors.accentPrimary}60`;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'scale(1)';
-            e.currentTarget.style.boxShadow = 'none';
-          }}
-        >
-          🚀
-        </div>
+
         
         {icons.map(icon => (
           <DesktopIcon
