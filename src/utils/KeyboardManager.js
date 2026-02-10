@@ -218,6 +218,16 @@ class KeyboardManager {
     const keyCombo = this.parseKeyCombo(event);
     if (!keyCombo) return;
 
+    // Don't interfere with input fields, textareas, or content-editable elements
+    const target = event.target;
+    const isInputElement = target.tagName === 'INPUT' || 
+                         target.tagName === 'TEXTAREA' || 
+                         target.contentEditable === 'true';
+    
+    if (isInputElement) {
+      return; // Allow normal typing in inputs
+    }
+
     const activeShortcuts = this.getShortcutsInContext(this.activeContext);
     
     for (const shortcut of activeShortcuts) {

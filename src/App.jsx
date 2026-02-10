@@ -35,6 +35,7 @@ function App() {
   // NEW BOOT FLOW STATE MANAGEMENT
   const [systemState, setSystemState] = useState('boot'); // 'boot' | 'black' | 'login' | 'desktop'
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   
   // Debug: Log component state
   console.log('App render - systemState:', systemState)
@@ -168,9 +169,20 @@ const icons = [
   }, []);
 
   const handleLogin = useCallback(() => {
+    // Prevent double login
+    if (isAuthenticated || isLoggingIn) {
+      return;
+    }
+    
+    setIsLoggingIn(true);
     setIsAuthenticated(true);
     setSystemState('desktop');
-  }, []);
+    
+    // Reset login flag after transition
+    setTimeout(() => {
+      setIsLoggingIn(false);
+    }, 1000);
+  }, [isAuthenticated, isLoggingIn]);
 
   const openWindow = (appType) => {
     // Phase 5: Check if already loading
@@ -731,7 +743,7 @@ const getComponent = (appType) => {
     children: renderComponent(window)
   }));
 
-  // NEW BOOT FLOW RENDER LOGIC
+// NEW BOOT FLOW RENDER LOGIC
   if (systemState === 'boot') {
     return <BootScreen onBootComplete={handleBootComplete} />;
   }
@@ -742,14 +754,11 @@ const getComponent = (appType) => {
   
   if (systemState === 'login') {
     return (
-      <>
-        <OSCursor />
-        <LoginScreen
-          onLogin={handleLogin}
-          currentTime={currentTime}
-          currentDate={currentDate}
-        />
-      </>
+      <LoginScreen
+        onLogin={handleLogin}
+        currentTime={currentTime}
+        currentDate={currentDate}
+      />
     );
   }
 
@@ -765,7 +774,6 @@ const getComponent = (appType) => {
             setShowSimplified(true);
           }}
         />
-        <OSCursor />
       </>
     );
   }
@@ -777,15 +785,13 @@ const getComponent = (appType) => {
     );
   }
 
+  // Desktop only renders AFTER successful authentication
   return (
     <>
       {/* OS Cursor System */}
       <OSCursor />
       
-      <div className={`app ${theme}`} style={{
-        opacity: isAuthenticated ? 1 : 0,
-        transition: 'opacity 0.3s ease-in'
-      }}>
+      <div className={`app ${theme}`}>
         <Desktop
           openWindow={openWindow}
           icons={desktopIcons}
