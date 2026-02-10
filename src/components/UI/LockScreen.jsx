@@ -15,9 +15,7 @@ const LockScreen = ({ isVisible, onUnlock, currentTime, currentDate, autoLogin =
       // Auto-login mode
       if (autoLogin) {
         setTimeout(() => setShowLogin(true), 500); // Show login form immediately
-        if (loginState === 'signing-in' || loginState === 'authenticating') {
-          setPassword('guest'); // Pre-fill guest credentials
-        }
+        setPassword('guest'); // Pre-fill guest credentials immediately
       }
     }
   }, [isVisible, autoLogin, loginState]);
@@ -31,14 +29,7 @@ const LockScreen = ({ isVisible, onUnlock, currentTime, currentDate, autoLogin =
     
     // Auto-login mode or guest credentials
     if (autoLogin || password === 'guest') {
-      // Show signing in state briefly
-      if (autoLogin) {
-        setTimeout(() => {
-          onUnlock('guest');
-        }, 200);
-      } else {
-        onUnlock(password);
-      }
+      onUnlock('guest');
     } else if (password === 'portfolio') { // Fallback for manual login
       onUnlock(password);
     } else {
@@ -64,7 +55,7 @@ const LockScreen = ({ isVisible, onUnlock, currentTime, currentDate, autoLogin =
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [autoLogin, showLogin, loginState]);
+  }, [autoLogin, showLogin, loginState, password]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Escape') {

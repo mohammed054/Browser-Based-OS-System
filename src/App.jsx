@@ -79,21 +79,21 @@ function App() {
   const getInitialIconPositions = () => {
 const icons = [
       // Portfolio apps - prioritized
-      { id: 'projects', src: './images/file-explorer.png', label: 'Projects' },
-      { id: 'skills', src: './images/settings.png', label: 'Skills' },
-      { id: 'contact', src: './images/note.png', label: 'Contact' },
-      { id: 'about', src: './images/logo.png', label: 'About' },
+      { id: 'projects', src: '/images/file-explorer.png', label: 'Projects' },
+      { id: 'skills', src: '/images/settings.png', label: 'Skills' },
+      { id: 'contact', src: '/images/note.png', label: 'Contact' },
+      { id: 'about', src: '/images/logo.png', label: 'About' },
       // Core system apps
-      { id: 'terminal', src: './images/terminal.png', label: 'Terminal' },
-      { id: 'settings', src: './images/settings.png', label: 'Settings' },
-      { id: 'chrome', src: './images/chrome.png', label: 'Chrome' },
-      { id: 'file-explorer', src: './images/file-explorer.png', label: 'File Explorer' },
-      { id: 'notes', src: './images/note.png', label: 'Notes' },
-      { id: 'calculator', src: './images/calculator.apng', label: 'Calculator' },
-      { id: 'trash-bin', src: './images/bin.png', label: 'Trash Bin' },
+      { id: 'terminal', src: '/images/terminal.png', label: 'Terminal' },
+      { id: 'settings', src: '/images/settings.png', label: 'Settings' },
+      { id: 'chrome', src: '/images/chrome.png', label: 'Chrome' },
+      { id: 'file-explorer', src: '/images/file-explorer.png', label: 'File Explorer' },
+      { id: 'notes', src: '/images/note.png', label: 'Notes' },
+      { id: 'calculator', src: '/images/calculator.apng', label: 'Calculator' },
+      { id: 'trash-bin', src: '/images/bin.png', label: 'Trash Bin' },
       // Additional portfolio apps
-      { id: 'resume', src: './images/note.png', label: 'Resume' },
-      { id: 'errorlog', src: './images/settings.png', label: 'ErrorLog' },
+      { id: 'resume', src: '/images/note.png', label: 'Resume' },
+      { id: 'errorlog', src: '/images/settings.png', label: 'ErrorLog' },
     ];
 
     const COLUMN_WIDTH = 120; // Horizontal spacing between columns

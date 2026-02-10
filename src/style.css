@@ -65,7 +65,7 @@ body {
   overflow: hidden;
   font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   color: white;
-  background: url('./images/wallpaper.png') center/cover no-repeat;
+  background: url('/images/wallpaper.png') center/cover no-repeat;
   /* Optimize background loading */
   background-attachment: fixed;
   image-rendering: -webkit-optimize-contrast;

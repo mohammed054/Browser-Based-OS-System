@@ -35,12 +35,12 @@ const BootScreen = ({ onBootComplete }) => {
 
   return (
     <div className="boot-screen">
-      <div className="boot-content">
+        <div className="boot-content">
         <div className="os-info">
           <h1 className="os-title">MohammedOS v4.0</h1>
           <div className="boot-status">
             <span>Initializing system</span>
-            <span className="cursor">_</span>
+            <div className="loading-circle"></div>
           </div>
         </div>
         
