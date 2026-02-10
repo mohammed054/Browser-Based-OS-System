@@ -166,8 +166,14 @@ const icons = [
         setTimeout(() => {
           setLoginState('authenticating');
           setTimeout(() => {
+            // Trigger desktop transition effects
+            document.body.classList.add('desktop-ready');
             setSystemState('desktop');
             setLoginState('idle');
+            // Remove animation class after animation completes
+            setTimeout(() => {
+              document.body.classList.remove('desktop-ready');
+            }, 800);
           }, 500);
         }, 300);
       }, 1000); // 800-1200ms auto-login delay
@@ -783,12 +789,15 @@ const getComponent = (appType) => {
     );
   }
 
-return (
+  return (
     <>
       {/* OS Cursor System */}
       <OSCursor />
       
-      <div className={`app ${theme}`}>
+      <div className={`app ${theme}`} style={{
+        opacity: systemState === 'desktop' ? 1 : 0,
+        transition: 'opacity 0.3s ease-in'
+      }}>
         <Desktop
           openWindow={openWindow}
           icons={desktopIcons}
