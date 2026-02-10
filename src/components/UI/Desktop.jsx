@@ -310,7 +310,9 @@ const Desktop = ({
           height: 'calc(100vh - 48px)', // Account for taskbar
           backgroundColor: theme.colors.background,
           background: 'url("/images/wallpaper.png") center/cover no-repeat',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          // Fix desktop icons visibility during fullscreen
+          zIndex: isFullscreen ? -1 : 0
         }}
       >
       <div className="desktop-icons" style={{ position: 'relative', width: '100%', height: '100%' }}>

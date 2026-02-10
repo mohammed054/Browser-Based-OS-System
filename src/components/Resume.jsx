@@ -211,7 +211,10 @@ const Resume = () => {
       background: '#f5f5f5',
       display: 'flex',
       flexDirection: 'column',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      // Fix content scaling for maximized windows
+      transform: 'none',
+      transformOrigin: 'top left'
     }}>
       {/* PDF Viewer Toolbar */}
       <div style={{

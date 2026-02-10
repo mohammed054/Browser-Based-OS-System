@@ -73,7 +73,10 @@ const Skills = () => {
       fontSize: '11px',
       padding: '16px',
       overflow: 'hidden',
-      position: 'relative'
+      position: 'relative',
+      // Fix content scaling for maximized windows
+      transform: 'none',
+      transformOrigin: 'top left'
     }}>
       {/* Scan line effect */}
       <div 

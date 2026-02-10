@@ -257,8 +257,8 @@ const WindowFrame = ({
     setResizeStart({
       x: e.clientX,
       y: e.clientY,
-      width: width,
-      height: height,
+      width: typeof width === 'string' ? (width === '100%' ? window.innerWidth : parseInt(width)) : width,
+      height: typeof height === 'string' ? (height === '100%' ? window.innerHeight - 48 : parseInt(height)) : height,
       startX: x,
       startY: y
     });
@@ -451,7 +451,10 @@ const WindowFrame = ({
             padding: theme.spacing.lg,
             backgroundColor: theme.colors.windowBg,
             overflow: 'auto',
-            color: theme.colors.textPrimary
+            color: theme.colors.textPrimary,
+            // Fix content scaling for maximized windows
+            transform: maximized ? 'none' : 'none',
+            transformOrigin: 'top left'
           }}
         >
           <style>{`

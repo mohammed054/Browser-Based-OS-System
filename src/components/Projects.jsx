@@ -151,7 +151,10 @@ const Projects = () => {
       background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
       color: 'white',
       display: 'flex',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      // Fix content scaling for maximized windows
+      transform: 'none',
+      transformOrigin: 'top left'
     }}>
       {/* Left Sidebar - Project List */}
       <div style={{

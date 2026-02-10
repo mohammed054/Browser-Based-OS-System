@@ -147,12 +147,15 @@ const ErrorLog = () => {
       width: '520px',
       height: '420px',
       background: '#0a0a0a',
-      color: '#00ff00',
+      color: '#ff0000',
       fontFamily: '"Courier New", monospace',
-      fontSize: '10px',
-      display: 'flex',
-      flexDirection: 'column',
-      overflow: 'hidden'
+      fontSize: '11px',
+      padding: '16px',
+      overflow: 'hidden',
+      position: 'relative',
+      // Fix content scaling for maximized windows
+      transform: 'none',
+      transformOrigin: 'top left'
     }}>
       {/* Header */}
       <div style={{
