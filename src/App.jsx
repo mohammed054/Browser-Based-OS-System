@@ -806,6 +806,7 @@ const getComponent = (appType) => {
           minimizeWindow={minimizeWindow}
           activeWindowId={activeWindowId}
           addNotification={addNotification}
+          isFullscreen={false}
         />
 <Taskbar 
           openWindow={openWindow}

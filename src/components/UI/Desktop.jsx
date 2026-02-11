@@ -21,7 +21,8 @@ const Desktop = ({
   toggleMaximizeWindow, 
   minimizeWindow, 
   activeWindowId,
-  addNotification 
+  addNotification,
+  isFullscreen
 }) => {
   const [selectedIcons, setSelectedIcons] = useState(new Set());
   const [isSelecting, setIsSelecting] = useState(false);
