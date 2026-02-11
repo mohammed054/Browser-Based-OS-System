@@ -215,21 +215,9 @@ const Desktop = ({
       onMouseMove={handleDesktopMouseMove}
       onMouseUp={handleDesktopMouseUp}
       onContextMenu={handleDesktopContextMenu}
-      onClick={() => contextMenu && setContextMenu(null)}
-      style={{
-        position: 'relative',
-        width: '100vw',
-        height: 'calc(100vh - 48px)',
-        backgroundColor: theme.colors.background,
-        backgroundImage: `var(--os-wallpaper, ${wallpaperUrl})`,
-        backgroundPosition: 'center',
-        backgroundSize: 'cover',
-        backgroundRepeat: 'no-repeat',
-        overflow: 'hidden',
-        zIndex: isFullscreen ? -1 : 0
-      }}
+      onClick={() => contextMenu && setContextMenu(null)}      
+      style={desktopStyle}
     >
-      <div className="desktop-icons" style={{ position: 'relative', width: '100%', height: '100%' }}>
         {icons.map(icon => (
           <DesktopIcon
             key={icon.id}
@@ -248,7 +236,7 @@ const Desktop = ({
             selectedIcons={selectedIcons}
           />
         ))}
-      </div>
+
 
       {selectionRect && (
         <div
