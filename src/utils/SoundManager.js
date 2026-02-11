@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Sound Effects Manager
  * Provides audio feedback for UI interactions
  * 
@@ -63,7 +63,7 @@ class SoundManager {
           osc.stop();
           gain.disconnect();
           osc.disconnect();
-        } catch (e) {
+        } catch {
           // Cleanup
         }
       };
@@ -89,7 +89,7 @@ class SoundManager {
           osc.stop();
           gain.disconnect();
           osc.disconnect();
-        } catch (e) {
+        } catch {
           // Cleanup
         }
       };
@@ -116,7 +116,7 @@ class SoundManager {
           osc.stop();
           gain.disconnect();
           osc.disconnect();
-        } catch (e) {
+        } catch {
           // Cleanup
         }
       };
@@ -143,7 +143,7 @@ class SoundManager {
           osc.stop();
           gain.disconnect();
           osc.disconnect();
-        } catch (e) {
+        } catch {
           // Cleanup
         }
       };
@@ -170,7 +170,7 @@ class SoundManager {
           osc.stop();
           gain.disconnect();
           osc.disconnect();
-        } catch (e) {
+        } catch {
           // Cleanup
         }
       };
@@ -196,7 +196,7 @@ class SoundManager {
           osc.stop();
           gain.disconnect();
           osc.disconnect();
-        } catch (e) {
+        } catch {
           // Cleanup
         }
       };
@@ -242,3 +242,4 @@ class SoundManager {
 export const soundManager = new SoundManager();
 
 export default SoundManager;
+

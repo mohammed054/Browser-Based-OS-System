@@ -1,20 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 const LockScreen = ({ isVisible, onUnlock, currentTime, currentDate, autoLogin = false, loginState = 'idle' }) => {
   const [showLogin, setShowLogin] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [isShaking, setIsShaking] = useState(false);
-
-  useEffect(() => {
-    if (isVisible) {
-      setPassword('');
-      setError('');
-      setShowLogin(false);
-    }
-  }, [isVisible]);
 
   const handleClick = () => {
+    if (!showLogin) {
+      setPassword('');
+      setError('');
+    }
     setShowLogin(true);
   };
 
@@ -23,10 +18,11 @@ const LockScreen = ({ isVisible, onUnlock, currentTime, currentDate, autoLogin =
     
     if (password === 'guest' || password === 'portfolio') {
       onUnlock(password);
+      setShowLogin(false);
+      setPassword('');
+      setError('');
     } else {
       setError('Incorrect password. Hint: "guest" or "portfolio"');
-      setIsShaking(true);
-      setTimeout(() => setIsShaking(false), 500);
       
       // Clear error after 3 seconds
       setTimeout(() => setError(''), 3000);

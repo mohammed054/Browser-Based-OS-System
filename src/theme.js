@@ -136,10 +136,10 @@ export const shadows = {
 // Z-Index Scale
 export const zIndex = {
   desktop: 1,
-  window: 100,
-  windowDragging: 1000,
-  contextMenu: 2000,
-  overlay: 3000
+  window: 2000,
+  windowDragging: 2100,
+  contextMenu: 12000,
+  overlay: 15000
 };
 
 // Theme Object

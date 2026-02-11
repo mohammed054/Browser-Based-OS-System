@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 const About = () => {
   const personalInfo = {
@@ -34,8 +34,9 @@ const About = () => {
 
   return (
     <div style={{ 
-      width: '520px',
-      height: '420px',
+      width: '100%',
+      height: '100%',
+      minHeight: 0,
       background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
       color: 'white',
       display: 'flex',

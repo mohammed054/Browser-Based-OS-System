@@ -22,6 +22,9 @@ class KeyboardManager {
     ];
     this.eventListeners = new Map();
     this.isDestroyed = false;
+    this.boundHandleKeyDown = this.handleKeyDown.bind(this);
+    this.boundHandleKeyUp = this.handleKeyUp.bind(this);
+    this.boundPreventDefaultForShortcuts = this.preventDefaultForShortcuts.bind(this);
     
     this.init();
   }
@@ -29,11 +32,11 @@ class KeyboardManager {
   init() {
     if (typeof window === 'undefined') return;
     
-    document.addEventListener('keydown', this.handleKeyDown.bind(this));
-    document.addEventListener('keyup', this.handleKeyUp.bind(this));
+    document.addEventListener('keydown', this.boundHandleKeyDown);
+    document.addEventListener('keyup', this.boundHandleKeyUp);
     
     // Prevent default browser behavior for our shortcuts
-    document.addEventListener('keydown', this.preventDefaultForShortcuts.bind(this), { capture: true });
+    document.addEventListener('keydown', this.boundPreventDefaultForShortcuts, { capture: true });
   }
 
   /**
@@ -207,7 +210,7 @@ class KeyboardManager {
   /**
    * Handle key up events
    */
-  handleKeyUp(event) {
+  handleKeyUp() {
     // Can be used for key release tracking if needed
   }
 
@@ -379,8 +382,9 @@ class KeyboardManager {
     this.isDestroyed = true;
     
     if (typeof document !== 'undefined') {
-      document.removeEventListener('keydown', this.handleKeyDown.bind(this));
-      document.removeEventListener('keyup', this.handleKeyUp.bind(this));
+      document.removeEventListener('keydown', this.boundHandleKeyDown);
+      document.removeEventListener('keyup', this.boundHandleKeyUp);
+      document.removeEventListener('keydown', this.boundPreventDefaultForShortcuts, { capture: true });
     }
     
     this.shortcuts.clear();

@@ -1,23 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import './BootScreen.css';
 
+const BOOT_LOGS = [
+  '[ OK ] Window Manager',
+  '[ OK ] Desktop Service',
+  '[ OK ] UI Kernel',
+  '[ OK ] Authentication Module',
+  '[ OK ] Cursor System',
+  'System initialization complete...'
+];
+
 const BootScreen = ({ onBootComplete }) => {
   const [logs, setLogs] = useState([]);
   const [currentStep, setCurrentStep] = useState(0);
-  
-  const bootLogs = [
-    '[ OK ] Window Manager',
-    '[ OK ] Desktop Service', 
-    '[ OK ] UI Kernel',
-    '[ OK ] Authentication Module',
-    '[ OK ] Cursor System',
-    'System initialization complete...'
-  ];
 
   useEffect(() => {
     const logInterval = setInterval(() => {
-      if (currentStep < bootLogs.length) {
-        setLogs(prev => [...prev, bootLogs[currentStep]]);
+      if (currentStep < BOOT_LOGS.length) {
+        setLogs(prev => [...prev, BOOT_LOGS[currentStep]]);
         setCurrentStep(prev => prev + 1);
       }
     }, 300);

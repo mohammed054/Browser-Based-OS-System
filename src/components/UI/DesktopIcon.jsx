@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { theme } from '../../theme';
 
 /**
@@ -9,7 +9,6 @@ const DesktopIcon = ({
   id, 
   src, 
   label, 
-  type, 
   x, 
   y, 
   isSelected, 
@@ -25,10 +24,6 @@ const DesktopIcon = ({
   const [currentPosition, setCurrentPosition] = useState({ x, y });
   const iconRef = useRef(null);
 
-  useEffect(() => {
-    setCurrentPosition({ x, y });
-  }, [x, y]);
-
   const handleDoubleClick = (e) => {
     e.stopPropagation();
     e.preventDefault();
@@ -41,16 +36,16 @@ const DesktopIcon = ({
     onContextMenu(e);
   };
 
-  const handleMouseMove = (e) => {
+  const handleMouseMove = useCallback((e) => {
     if (!isDragging) return;
     
     const newX = e.clientX - dragStart.x;
     const newY = e.clientY - dragStart.y;
     
     setCurrentPosition({ x: newX, y: newY });
-  };
+  }, [dragStart, isDragging]);
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     if (isDragging) {
       setIsDragging(false);
       // Only update if position actually changed
@@ -58,7 +53,7 @@ const DesktopIcon = ({
         onUpdatePosition(id, currentPosition.x, currentPosition.y, true);
       }
     }
-  };
+  }, [currentPosition, id, isDragging, onUpdatePosition, x, y]);
 
   useEffect(() => {
     if (isDragging) {
@@ -70,7 +65,7 @@ const DesktopIcon = ({
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, dragStart, currentPosition]);
+  }, [handleMouseMove, handleMouseUp, isDragging]);
 
   const handleMouseDown = (e) => {
     if (e.button !== 0) return; // Only left click
@@ -117,6 +112,7 @@ const DesktopIcon = ({
         x: e.clientX - x,
         y: e.clientY - y
       });
+      setCurrentPosition({ x, y });
       
       // Clear selection if clicking on unselected icon
       if (onSelectionChange && !isSelected) {
@@ -127,8 +123,8 @@ const DesktopIcon = ({
 
   const iconStyle = {
     position: 'absolute',
-    left: currentPosition.x,
-    top: currentPosition.y,
+    left: isDragging ? currentPosition.x : x,
+    top: isDragging ? currentPosition.y : y,
     width: theme.dimensions.iconSize,
     height: theme.dimensions.iconSize,
     cursor: 'pointer',

@@ -8,9 +8,17 @@ body {
   cursor: none !important;
 }
 
+body * {
+  cursor: none !important;
+}
+
 /* On touch devices, show default cursor */
 @media (pointer: coarse) {
   body {
+    cursor: auto !important;
+  }
+
+  body * {
     cursor: auto !important;
   }
   
@@ -259,7 +267,7 @@ body {
   }
 }
 
-/* Ensure OS cursor works with existing hover states */
+/* Keep native cursor hidden on interactive elements to avoid double cursors */
 .os-logo-button,
 .tray-icon,
 .running-app,
@@ -269,28 +277,29 @@ body {
 .icon,
 .desktop-icon,
 .window-frame .titlebar {
-  cursor: pointer !important;
+  cursor: none !important;
 }
 
-/* Text inputs */
+/* Keep native text caret cursor hidden (custom cursor handles text state) */
 input[type="text"],
 input[type="password"],
+input[type="email"],
 textarea,
 .terminal-input {
-  cursor: text !important;
+  cursor: none !important;
 }
 
-/* Draggable elements */
+/* Keep native drag/resize cursors hidden */
 .desktop-icon,
 .window-frame .titlebar {
-  cursor: grab !important;
+  cursor: none !important;
 }
 
 .window-frame .resize-handle {
-  cursor: resize !important;
+  cursor: none !important;
 }
 
-/* Force pointer state for specific interactive elements */
+/* Keep native pointer cursor hidden on all clickable controls */
 button,
 a,
 .clickable,
@@ -301,7 +310,7 @@ a,
 .context-menu-item,
 .start-menu-app,
 .notification-close {
-  cursor: pointer !important;
+  cursor: none !important;
 }
 
 /* Ensure z-index hierarchy */

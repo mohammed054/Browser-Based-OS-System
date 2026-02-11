@@ -1,5 +1,5 @@
-import './style.css'
-import { useState, useCallback, useEffect, Suspense, lazy } from 'react'
+﻿import './style.css'
+import { useState, useCallback, useEffect, Suspense, lazy, useMemo, useRef } from 'react'
 import Desktop from './components/UI/Desktop'
 import Taskbar from './components/Taskbar'
 import NotificationCenter from './components/UI/NotificationCenter'
@@ -13,8 +13,6 @@ import OSCursor from './components/UI/OSCursor'
 import { soundManager } from './utils/SoundManager'
 import { MobileFallback, SimplifiedPortfolio } from './components/MobileFallback'
 
-// Lazy load components for better performance
-const WindowFrame = lazy(() => import('./components/WindowFrame'))
 const Calculator = lazy(() => import('./components/Calculator'))
 const Terminal = lazy(() => import('./components/Terminal'))
 const Chrome = lazy(() => import('./components/Chrome'))
@@ -22,8 +20,6 @@ const Settings = lazy(() => import('./components/Settings'))
 const FileExplorer = lazy(() => import('./components/FileExplorer'))
 const TrashBin = lazy(() => import('./components/TrashBin'))
 const Notes = lazy(() => import('./components/Notes'))
-
-// Portfolio apps
 const Projects = lazy(() => import('./components/Projects'))
 const Skills = lazy(() => import('./components/Skills'))
 const Contact = lazy(() => import('./components/Contact'))
@@ -31,107 +27,146 @@ const About = lazy(() => import('./components/About'))
 const Resume = lazy(() => import('./components/Resume'))
 const ErrorLog = lazy(() => import('./components/ErrorLog'))
 
+const TASKBAR_HEIGHT = 48
+const ICON_COLUMN_WIDTH = 120
+const ICON_ROW_HEIGHT = 85
+const ICON_MARGIN = 20
+
+const APP_DEFINITIONS = {
+  Calculator: { component: Calculator, icon: '/images/calculator.apng', allowMultiple: false, sizeMode: 'calculator' },
+  Terminal: { component: Terminal, icon: '/images/terminal.png', allowMultiple: false },
+  Chrome: { component: Chrome, icon: '/images/chrome.png', allowMultiple: false },
+  Settings: { component: Settings, icon: '/images/settings.png', allowMultiple: false },
+  'File Explorer': { component: FileExplorer, icon: '/images/file-explorer.png', allowMultiple: false },
+  'Trash Bin': { component: TrashBin, icon: '/images/bin.png', allowMultiple: false },
+  Notes: { component: Notes, icon: '/images/note.png', allowMultiple: true },
+  Projects: { component: Projects, icon: '/images/file-explorer.png', allowMultiple: false, sizeMode: 'portfolio' },
+  Skills: { component: Skills, icon: '/images/settings.png', allowMultiple: false, sizeMode: 'portfolio' },
+  Contact: { component: Contact, icon: '/images/note.png', allowMultiple: false, sizeMode: 'portfolio' },
+  About: { component: About, icon: '/images/logo.png', allowMultiple: false, sizeMode: 'portfolio' },
+  Resume: { component: Resume, icon: '/images/note.png', allowMultiple: false, sizeMode: 'portfolio' },
+  ErrorLog: { component: ErrorLog, icon: '/images/settings.png', allowMultiple: false, sizeMode: 'portfolio' }
+}
+
+const APP_LAUNCH_DELAYS = {
+  Calculator: 80,
+  Terminal: 100,
+  Notes: 120,
+  Settings: 100,
+  'File Explorer': 130,
+  'Trash Bin': 90,
+  Chrome: 150,
+  Projects: 140,
+  Skills: 120,
+  Contact: 110,
+  About: 100,
+  Resume: 110,
+  ErrorLog: 130
+}
+
+const DESKTOP_APP_ORDER = [
+  'Projects',
+  'Skills',
+  'Contact',
+  'About',
+  'Terminal',
+  'Settings',
+  'Chrome',
+  'File Explorer',
+  'Notes',
+  'Calculator',
+  'Trash Bin',
+  'Resume',
+  'ErrorLog'
+]
+
+function getDesktopBounds() {
+  if (typeof window === 'undefined') {
+    return { width: 1280, height: 720 }
+  }
+
+  return {
+    width: window.innerWidth,
+    height: Math.max(320, window.innerHeight - TASKBAR_HEIGHT)
+  }
+}
+
+function computeInitialWindowSize(appType, bounds) {
+  const sizeMode = APP_DEFINITIONS[appType]?.sizeMode
+
+  if (sizeMode === 'calculator') {
+    const availableHeight = bounds.height - 20
+    const maxHeight = Math.min(availableHeight, Math.floor(320 * 16 / 9))
+    const width = Math.min(320, Math.floor(maxHeight * 9 / 16))
+    const height = Math.floor(width * 16 / 9)
+    return { width, height }
+  }
+
+  if (sizeMode === 'portfolio') {
+    return {
+      width: Math.max(520, Math.floor(bounds.width * 0.68)),
+      height: Math.max(420, Math.floor(bounds.height * 0.68))
+    }
+  }
+
+  return {
+    width: Math.floor(bounds.width * 0.75),
+    height: Math.floor(bounds.height * 0.75)
+  }
+}
+
+function clampWindowToBounds(windowState, bounds) {
+  const width = Math.max(260, Math.min(windowState.width, bounds.width))
+  const height = Math.max(180, Math.min(windowState.height, bounds.height))
+
+  const maxX = Math.max(0, bounds.width - width)
+  const maxY = Math.max(0, bounds.height - height)
+
+  return {
+    ...windowState,
+    width,
+    height,
+    x: Math.max(0, Math.min(windowState.x, maxX)),
+    y: Math.max(0, Math.min(windowState.y, maxY))
+  }
+}
+
+function buildInitialDesktopIcons() {
+  if (typeof window === 'undefined') {
+    return []
+  }
+
+  const { height } = getDesktopBounds()
+  const availableHeight = height - ICON_MARGIN * 2
+  const maxRowsPerColumn = Math.max(1, Math.floor(availableHeight / ICON_ROW_HEIGHT))
+
+  return DESKTOP_APP_ORDER.map((app, index) => {
+    const col = Math.floor(index / maxRowsPerColumn)
+    const row = index % maxRowsPerColumn
+
+    return {
+      id: app.toLowerCase().replace(/\s+/g, '-'),
+      label: app,
+      src: APP_DEFINITIONS[app]?.icon || '/images/logo.png',
+      x: ICON_MARGIN + col * ICON_COLUMN_WIDTH,
+      y: ICON_MARGIN + row * ICON_ROW_HEIGHT
+    }
+  })
+}
+
 function App() {
-  // NEW BOOT FLOW STATE MANAGEMENT
-  const [systemState, setSystemState] = useState('boot'); // 'boot' | 'black' | 'login' | 'desktop'
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
-  
-  // Debug: Log component state
-  console.log('App render - systemState:', systemState)
-  
-  // Phase 3 State Management
-  const [notifications, setNotifications] = useState([]);
-  const [isLocked, setIsLocked] = useState(false);
-  // const [language, setLanguage] = useState('en'); // Future: Multi-language support
-  
-  // Phase 5 Mobile State
-  const [showMobileFallback, setShowMobileFallback] = useState(false);
-  const [showSimplified, setShowSimplified] = useState(false);
-  const [mobileWarningAcknowledged, setMobileWarningAcknowledged] = useState(false);
-  
-  // Lock screen time
-  const [currentTime, setCurrentTime] = useState('');
-  const [currentDate, setCurrentDate] = useState('');
-  
-  useEffect(() => {
-    const updateDateTime = () => {
-      const now = new Date();
-      const timeString = now.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      });
-      const dateString = now.toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-      setCurrentTime(timeString);
-      setCurrentDate(dateString);
-    };
+  const [systemState, setSystemState] = useState('boot')
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isLoggingIn, setIsLoggingIn] = useState(false)
 
-    updateDateTime();
-    const interval = setInterval(updateDateTime, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
-  
-  // Calculate initial icon positions with column wrapping
-  const getInitialIconPositions = () => {
-const icons = [
-      // Portfolio apps - prioritized
-      { id: 'projects', src: '/portfolio/images/file-explorer.png', label: 'Projects' },
-      { id: 'skills', src: '/portfolio/images/settings.png', label: 'Skills' },
-      { id: 'contact', src: '/portfolio/images/note.png', label: 'Contact' },
-      { id: 'about', src: '/portfolio/images/logo.png', label: 'About' },
-      // Core system apps
-      { id: 'terminal', src: '/portfolio/images/terminal.png', label: 'Terminal' },
-      { id: 'settings', src: '/portfolio/images/settings.png', label: 'Settings' },
-      { id: 'chrome', src: '/portfolio/images/chrome.png', label: 'Chrome' },
-      { id: 'file-explorer', src: '/portfolio/images/file-explorer.png', label: 'File Explorer' },
-      { id: 'notes', src: '/portfolio/images/note.png', label: 'Notes' },
-      { id: 'calculator', src: '/portfolio/images/calculator.apng', label: 'Calculator' },
-      { id: 'trash-bin', src: '/portfolio/images/bin.png', label: 'Trash Bin' },
-      // Additional portfolio apps
-      { id: 'resume', src: '/portfolio/images/note.png', label: 'Resume' },
-      { id: 'errorlog', src: '/portfolio/images/settings.png', label: 'ErrorLog' },
-    ];
-
-    const COLUMN_WIDTH = 120; // Horizontal spacing between columns
-    const ICON_HEIGHT = 85; // Approximate total height of icon (48px icon + 5px gap + 12px text + padding)
-    const TASKBAR_HEIGHT = 48;
-    const MARGIN = 20;
-
-    // Calculate available vertical space (viewport height - taskbar - margins)
-    const availableHeight = window.innerHeight - TASKBAR_HEIGHT - (MARGIN * 2);
-    const maxRowsPerColumn = Math.max(1, Math.floor(availableHeight / ICON_HEIGHT));
-
-    const positionedIcons = [];
-    let currentCol = 0;
-    let currentRow = 0;
-
-    icons.forEach(icon => {
-      positionedIcons.push({
-        ...icon,
-        x: currentCol * COLUMN_WIDTH + MARGIN,
-        y: currentRow * ICON_HEIGHT + MARGIN
-      });
-
-      currentRow++;
-      if (currentRow >= maxRowsPerColumn) {
-        currentRow = 0;
-        currentCol++;
-      }
-    });
-
-    return positionedIcons;
-  };
+  const [notifications, setNotifications] = useState([])
+  const [isLocked, setIsLocked] = useState(false)
+  const [theme, setTheme] = useState('dark')
 
   const [windows, setWindows] = useState([])
   const [activeWindowId, setActiveWindowId] = useState(null)
-  const [theme, setTheme] = useState('dark')
+
+  const [desktopIcons, setDesktopIcons] = useState(() => buildInitialDesktopIcons())
   const [deletedIcons, setDeletedIcons] = useState([
     {
       id: 'dummy-image',
@@ -146,427 +181,17 @@ const icons = [
       type: 'spreadsheet'
     }
   ])
-  const [desktopIcons, setDesktopIcons] = useState(getInitialIconPositions())
-  
-  // Phase 5 Loading states
-  const [loadingWindows, setLoadingWindows] = useState(new Set());
-  
-  // Initialize sound manager
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.soundManager = soundManager;
-      // Set initial volume to default (0.3)
-      soundManager.setVolume(0.3);
-    }
-  }, []);
 
-  // NEW BOOT FLOW HANDLERS
-  const handleBootComplete = useCallback(() => {
-    setSystemState('black');
-    setTimeout(() => {
-      setSystemState('login');
-    }, 800);
-  }, []);
+  const [showSimplified, setShowSimplified] = useState(false)
+  const [mobileWarningAcknowledged, setMobileWarningAcknowledged] = useState(false)
 
-  const handleLogin = useCallback(() => {
-    // Prevent double login
-    if (isAuthenticated || isLoggingIn) {
-      return;
-    }
-    
-    setIsLoggingIn(true);
-    setIsAuthenticated(true);
-    setSystemState('desktop');
-    
-    // Reset login flag after transition
-    setTimeout(() => {
-      setIsLoggingIn(false);
-    }, 1000);
-  }, [isAuthenticated, isLoggingIn]);
+  const [currentTime, setCurrentTime] = useState('')
+  const [currentDate, setCurrentDate] = useState('')
 
-  const openWindow = (appType) => {
-    // Phase 5: Check if already loading
-    if (loadingWindows.has(appType)) {
-      return; // Prevent duplicate launches
-    }
+  const launchTimersRef = useRef(new Set())
+  const loadingAppsRef = useRef(new Set())
+  const windowsRef = useRef([])
 
-    // Phase 5: Play window open sound
-    if (typeof window !== 'undefined' && window.soundManager) {
-      window.soundManager.play('windowOpen');
-    }
-
-    // For Notes, allow multiple windows
-    if (appType === 'Notes') {
-      const notesWindows = windows.filter(w => w.id.startsWith('Notes-'))
-      const nextId = `Notes-${notesWindows.length + 1}`
-      const offset = windows.length * 20 // Slight offset for cascade effect
-const getComponent = (appType) => {
-      switch (appType) {
-        case 'Calculator': return Calculator;
-        case 'Terminal': return Terminal;
-        case 'Chrome': return Chrome;
-        case 'Settings': return Settings;
-        case 'File Explorer': return FileExplorer;
-        case 'Trash Bin': return TrashBin;
-        case 'Notes': return Notes;
-        // Portfolio apps
-        case 'Projects': return Projects;
-        case 'Skills': return Skills;
-        case 'Contact': return Contact;
-        case 'About': return About;
-        case 'Resume': return Resume;
-        case 'ErrorLog': return ErrorLog;
-        default: return () => <div>{appType} App</div>;
-      }
-    };
-
-      // Desktop container dimensions (viewport minus taskbar)
-      const desktopWidth = window.innerWidth;
-      const desktopHeight = window.innerHeight - 48;
-
-      const defaultWidth = Math.floor(desktopWidth * 0.75);
-      const defaultHeight = Math.floor(desktopHeight * 0.75);
-
-      const newWindow = {
-        id: nextId,
-        title: 'Notes',
-        component: getComponent(appType),
-        x: Math.max(0, (desktopWidth - defaultWidth) / 2 + offset), // Center horizontally with offset
-        y: Math.max(0, (desktopHeight - defaultHeight) / 2 + offset), // Center vertically with offset
-        width: defaultWidth,
-        height: defaultHeight,
-        maximized: false,
-        minimized: false,
-        lastBounds: null,
-        isCalculator: false
-      }
-
-      setWindows(prev => [...prev, newWindow])
-      setActiveWindowId(nextId)
-      return
-    }
-
-    // Check if window already exists
-    if (windows.some(w => w.id === appType)) {
-      // Bring to front if exists and restore if minimized
-      setWindows(prev => {
-        const existing = prev.find(w => w.id === appType)
-        const others = prev.filter(w => w.id !== appType)
-        return [...others, { ...existing, minimized: false }]
-      })
-      setActiveWindowId(appType)
-      return // No duplicates
-    }
-
-    // Phase 5: Add loading delay
-    setLoadingWindows(prev => new Set(prev).add(appType));
-    
-    // Calculate realistic delay (80-150ms based on app complexity)
-    const getAppDelay = (app) => {
-      const delays = {
-        'Calculator': 80,
-        'Terminal': 100,
-        'Notes': 120,
-        'Settings': 100,
-        'File Explorer': 130,
-        'Trash Bin': 90,
-        'Chrome': 150,
-        'Projects': 140,
-        'Skills': 120,
-        'Contact': 110,
-        'About': 100,
-        'Resume': 110,
-        'ErrorLog': 130
-      };
-      return delays[app] || 120;
-    };
-
-    const launchDelay = getAppDelay(appType);
-    
-    // Show loading notification
-    addNotification('system', `Launching ${appType}...`, {
-      title: 'System',
-      duration: launchDelay
-    });
-
-    setTimeout(() => {
-      setLoadingWindows(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(appType);
-        return newSet;
-      });
-      
-      // Continue with window creation...
-    }, launchDelay);
-
-    setTimeout(() => {
-      setLoadingWindows(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(appType);
-        return newSet;
-      });
-      
-      const offset = windows.length * 20 // Slight offset for cascade effect
-      const getComponent = (appType) => {
-        switch (appType) {
-          case 'Calculator': return Calculator;
-          case 'Terminal': return Terminal;
-          case 'Chrome': return Chrome;
-          case 'Settings': return Settings;
-          case 'File Explorer': return FileExplorer;
-          case 'Trash Bin': return TrashBin;
-          case 'Notes': return Notes;
-          // Portfolio apps
-          case 'Projects': return Projects;
-          case 'Skills': return Skills;
-          case 'Contact': return Contact;
-          case 'About': return About;
-          case 'Resume': return Resume;
-          case 'ErrorLog': return ErrorLog;
-          default: return () => <div>{appType} App</div>;
-        }
-      };
-
-      // Desktop container dimensions (viewport minus taskbar)
-      const desktopWidth = window.innerWidth;
-      const desktopHeight = window.innerHeight - 48;
-
-      // Special sizing for different app types
-      const isCalculator = appType === 'Calculator';
-      const isPortfolioApp = ['Projects', 'Skills', 'Contact', 'About', 'Resume', 'ErrorLog'].includes(appType);
-      let defaultWidth, defaultHeight;
-      
-      if (isCalculator) {
-        // Calculator portrait mode
-        const availableHeight = desktopHeight - 20;
-        const aspectRatioHeight = Math.floor(320 * 16 / 9);
-        const maxAllowedHeight = Math.min(aspectRatioHeight, availableHeight);
-        const calculatedWidth = Math.min(320, Math.floor(maxAllowedHeight * 9 / 16));
-        const calculatedHeight = Math.floor(calculatedWidth * 16 / 9);
-
-        defaultWidth = calculatedWidth;
-        defaultHeight = calculatedHeight;
-      } else if (isPortfolioApp) {
-        // Portfolio apps - fixed 520x420 size
-        defaultWidth = 520;
-        defaultHeight = 420;
-      } else {
-        // Other system apps - 75% of desktop
-        defaultWidth = Math.floor(desktopWidth * 0.75);
-        defaultHeight = Math.floor(desktopHeight * 0.75);
-      }
-
-      const newWindow = {
-        id: appType,
-        title: appType,
-        component: getComponent(appType),
-        x: Math.max(0, (desktopWidth - defaultWidth) / 2 + offset), // Center horizontally with offset
-        y: Math.max(0, (desktopHeight - defaultHeight) / 2 + offset), // Center vertically with offset
-        width: defaultWidth,
-        height: defaultHeight,
-        maximized: false,
-        minimized: false,
-        lastBounds: null,
-        isCalculator: isCalculator
-      }
-
-      setWindows(prev => [...prev, newWindow])
-      setActiveWindowId(appType)
-    }, launchDelay);
-  }
-
-  const closeWindow = (id) => {
-    // Phase 5: Play window close sound
-    if (typeof window !== 'undefined' && window.soundManager) {
-      window.soundManager.play('windowClose');
-    }
-
-    setWindows(prev => prev.filter(w => w.id !== id))
-    if (activeWindowId === id) {
-      setActiveWindowId(null)
-    }
-  }
-
-  const focusWindow = (id) => {
-    setWindows(prev => {
-      const existing = prev.find(w => w.id === id)
-      const others = prev.filter(w => w.id !== id)
-      return [...others, existing]
-    })
-    setActiveWindowId(id)
-  }
-
-  const updateWindowPosition = useCallback((id, x, y) => {
-    setWindows(prev => prev.map(w => w.id === id ? { ...w, x, y } : w))
-  }, [])
-
-  const updateWindowSize = useCallback((id, width, height) => {
-    setWindows(prev => prev.map(w => w.id === id ? { ...w, width, height } : w))
-  }, [])
-
-  const toggleMaximizeWindow = useCallback((id) => {
-    setWindows(prev => prev.map(w => {
-      if (w.id === id) {
-        if (w.maximized) {
-          // Restore to last bounds
-          return {
-            ...w,
-            ...w.lastBounds,
-            maximized: false,
-            lastBounds: null
-          }
-        } else {
-          // Maximize - store current bounds and set to maximized relative to desktop container
-          const lastBounds = { x: w.x, y: w.y, width: w.width, height: w.height }
-          // Desktop container dimensions (viewport minus taskbar)
-          const desktopWidth = window.innerWidth;
-          const desktopHeight = window.innerHeight - 48;
-          return {
-            ...w,
-            x: 0,
-            y: 0,
-            width: desktopWidth,
-            height: desktopHeight, // Fill the desktop container completely
-            maximized: true,
-            lastBounds
-          }
-        }
-      }
-      return w
-    }))
-  }, [])
-
-  const minimizeWindow = useCallback((id) => {
-    setWindows(prev => prev.map(w => w.id === id ? { ...w, minimized: true } : w))
-    if (activeWindowId === id) {
-      setActiveWindowId(null)
-    }
-  }, [activeWindowId])
-
-  const toggleTheme = useCallback(() => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark')
-  }, [])
-
-  const deleteIcon = useCallback((iconId) => {
-    const iconToDelete = desktopIcons.find(icon => icon.id === iconId);
-    if (iconToDelete) {
-      const deletedItem = {
-        ...iconToDelete,
-        deletedDate: new Date().toLocaleString(),
-        type: 'application' // Default type for apps
-      };
-      setDeletedIcons(prev => [...prev, deletedItem]);
-      setDesktopIcons(prev => prev.filter(icon => icon.id !== iconId));
-    }
-  }, [desktopIcons]);
-
-  const restoreIcon = useCallback((icon) => {
-    // Remove deleted-specific properties and keep only desktop icon properties
-    const { deletedDate, ...desktopIcon } = icon;
-    setDesktopIcons(prev => [...prev, desktopIcon]);
-    setDeletedIcons(prev => prev.filter(item => item.id !== icon.id));
-  }, []);
-
-  const deletePermanently = useCallback((icon) => {
-    setDeletedIcons(prev => prev.filter(item => item.id !== icon.id));
-  }, []);
-
-
-
-  const updateIconPosition = useCallback((iconId, x, y) => {
-    setDesktopIcons(prev => {
-      const icons = [...prev];
-      const movedIconIndex = icons.findIndex(icon => icon.id === iconId);
-
-      if (movedIconIndex === -1) return prev;
-
-      const movedIcon = icons[movedIconIndex];
-      const ICON_WIDTH = 80;
-      const ICON_HEIGHT = 70;
-      const TASKBAR_HEIGHT = 48;
-      const COLUMN_WIDTH = 120;
-      const ROW_HEIGHT = 85;
-
-      // Snap to grid
-      const snapToGrid = (posX, posY) => {
-        const snappedX = Math.round(posX / COLUMN_WIDTH) * COLUMN_WIDTH + 20;
-        const snappedY = Math.round(posY / ROW_HEIGHT) * ROW_HEIGHT + 20;
-
-        const maxX = window.innerWidth - ICON_WIDTH - 20;
-        const maxY = window.innerHeight - ICON_HEIGHT - TASKBAR_HEIGHT - 20;
-
-        return {
-          x: Math.max(20, Math.min(snappedX, maxX)),
-          y: Math.max(20, Math.min(snappedY, maxY))
-        };
-      };
-
-      // Check if new position overlaps with any existing icon
-      const checkOverlap = (testX, testY, excludeId = null) => {
-        return icons.some(icon => {
-          if (icon.id === excludeId) return false;
-
-          const overlapX = Math.abs(icon.x - testX) < ICON_WIDTH;
-          const overlapY = Math.abs(icon.y - testY) < ICON_HEIGHT;
-          return overlapX && overlapY;
-        });
-      };
-
-      // Find nearest available position
-      const findNearestAvailablePosition = (startX, startY) => {
-        const MARGIN = 20;
-        const maxX = window.innerWidth - ICON_WIDTH - MARGIN;
-        const maxY = window.innerHeight - ICON_HEIGHT - TASKBAR_HEIGHT - MARGIN;
-
-        let closestPos = null;
-        let closestDist = Infinity;
-
-        // Check all possible grid positions within reasonable bounds
-        const maxCols = Math.ceil(window.innerWidth / COLUMN_WIDTH);
-        const maxRows = Math.ceil(window.innerHeight / ROW_HEIGHT);
-
-        for (let col = 0; col < maxCols; col++) {
-          for (let row = 0; row < maxRows; row++) {
-            const testX = col * COLUMN_WIDTH + MARGIN;
-            const testY = row * ROW_HEIGHT + MARGIN;
-
-            if (testX > maxX || testY > maxY) continue;
-
-            if (!checkOverlap(testX, testY, iconId)) {
-              const dist = Math.pow(testX - startX, 2) + Math.pow(testY - startY, 2);
-              if (dist < closestDist) {
-                closestDist = dist;
-                closestPos = { x: testX, y: testY };
-              }
-            }
-          }
-        }
-
-        if (closestPos) return closestPos;
-
-        // Ultimate fallback: use original position
-        return { x: movedIcon.x, y: movedIcon.y };
-      };
-
-      // Snap to grid first
-      let { x: newX, y: newY } = snapToGrid(x, y);
-
-      // Check for overlap
-      if (checkOverlap(newX, newY, iconId)) {
-        // Find nearest available position
-        const availablePos = findNearestAvailablePosition(newX, newY);
-        newX = availablePos.x;
-        newY = availablePos.y;
-      }
-
-      // Update the moved icon's position
-      const newIcons = [...icons];
-      newIcons[movedIconIndex] = { ...movedIcon, x: newX, y: newY };
-      return newIcons;
-    });
-}, []);
-
-  // Phase 3 Notification Management
   const addNotification = useCallback((type, message, options = {}) => {
     const notification = {
       id: Date.now() + Math.random(),
@@ -576,182 +201,600 @@ const getComponent = (appType) => {
       duration: options.duration || 5000,
       title: options.title,
       ...options
-    };
-    setNotifications(prev => [...prev, notification]);
-  }, []);
+    }
+
+    setNotifications(prev => [...prev, notification])
+  }, [])
 
   const removeNotification = useCallback((id) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  }, []);
+    setNotifications(prev => prev.filter(notification => notification.id !== id))
+  }, [])
 
-  // Phase 5 Keyboard Shortcuts System
+  const focusWindow = useCallback((id) => {
+    setWindows(prev => {
+      const target = prev.find(window => window.id === id)
+      if (!target) {
+        return prev
+      }
+
+      const others = prev.filter(window => window.id !== id)
+      return [...others, { ...target, minimized: false }]
+    })
+
+    setActiveWindowId(id)
+  }, [])
+
+  const closeWindow = useCallback((id) => {
+    if (typeof window !== 'undefined' && window.soundManager) {
+      window.soundManager.play('windowClose')
+    }
+
+    let nextActiveId = null
+    setWindows(prev => {
+      const next = prev.filter(window => window.id !== id)
+      nextActiveId = next.length > 0 ? next[next.length - 1].id : null
+      return next
+    })
+
+    setActiveWindowId(nextActiveId)
+  }, [])
+
+  const minimizeWindow = useCallback((id) => {
+    setWindows(prev => prev.map(window => {
+      if (window.id !== id) {
+        return window
+      }
+
+      return { ...window, minimized: true }
+    }))
+
+    setActiveWindowId(prev => (prev === id ? null : prev))
+  }, [])
+
+  const toggleMaximizeWindow = useCallback((id) => {
+    setWindows(prev => {
+      const bounds = getDesktopBounds()
+
+      return prev.map(window => {
+        if (window.id !== id) {
+          return window
+        }
+
+        if (window.maximized) {
+          if (window.lastBounds) {
+            return {
+              ...window,
+              ...window.lastBounds,
+              maximized: false,
+              lastBounds: null
+            }
+          }
+
+          return { ...window, maximized: false }
+        }
+
+        return {
+          ...window,
+          x: 0,
+          y: 0,
+          width: bounds.width,
+          height: bounds.height,
+          maximized: true,
+          lastBounds: {
+            x: window.x,
+            y: window.y,
+            width: window.width,
+            height: window.height
+          }
+        }
+      })
+    })
+  }, [])
+
+  const updateWindowPosition = useCallback((id, x, y) => {
+    setWindows(prev => {
+      const bounds = getDesktopBounds()
+
+      return prev.map(window => {
+        if (window.id !== id || window.maximized) {
+          return window
+        }
+
+        const maxX = Math.max(0, bounds.width - window.width)
+        const maxY = Math.max(0, bounds.height - window.height)
+
+        return {
+          ...window,
+          x: Math.max(0, Math.min(x, maxX)),
+          y: Math.max(0, Math.min(y, maxY))
+        }
+      })
+    })
+  }, [])
+
+  const updateWindowSize = useCallback((id, width, height) => {
+    setWindows(prev => {
+      const bounds = getDesktopBounds()
+
+      return prev.map(window => {
+        if (window.id !== id || window.maximized) {
+          return window
+        }
+
+        const safeWidth = Math.max(260, Math.min(width, bounds.width - window.x))
+        const safeHeight = Math.max(180, Math.min(height, bounds.height - window.y))
+
+        return {
+          ...window,
+          width: safeWidth,
+          height: safeHeight
+        }
+      })
+    })
+  }, [])
+
+  const handleTaskbarWindowAction = useCallback((id) => {
+    let nextActiveId = activeWindowId
+
+    setWindows(prev => {
+      const target = prev.find(window => window.id === id)
+      if (!target) {
+        return prev
+      }
+
+      if (!target.minimized && activeWindowId === id) {
+        nextActiveId = null
+        return prev.map(window => (window.id === id ? { ...window, minimized: true } : window))
+      }
+
+      nextActiveId = id
+      const others = prev.filter(window => window.id !== id)
+      return [...others, { ...target, minimized: false }]
+    })
+
+    setActiveWindowId(nextActiveId)
+  }, [activeWindowId])
+
+  const openWindow = useCallback((appType) => {
+    const definition = APP_DEFINITIONS[appType]
+    if (!definition) {
+      addNotification('error', `Unknown app: ${appType}`, { title: 'Launch Error', duration: 2500 })
+      return
+    }
+
+    if (loadingAppsRef.current.has(appType)) {
+      return
+    }
+
+    if (typeof window !== 'undefined' && window.soundManager) {
+      window.soundManager.play('windowOpen')
+    }
+
+    if (!definition.allowMultiple) {
+      const existing = windowsRef.current.find(window => window.appType === appType)
+      if (existing) {
+        focusWindow(existing.id)
+        return
+      }
+    }
+
+    const launchDelay = APP_LAUNCH_DELAYS[appType] || 100
+
+    loadingAppsRef.current.add(appType)
+
+    addNotification('system', `Launching ${appType}...`, {
+      title: 'System',
+      duration: launchDelay
+    })
+
+    const timerId = window.setTimeout(() => {
+      loadingAppsRef.current.delete(appType)
+
+      let nextWindowId = null
+
+      setWindows(prev => {
+        const bounds = getDesktopBounds()
+        const size = computeInitialWindowSize(appType, bounds)
+
+        const width = Math.min(size.width, bounds.width)
+        const height = Math.min(size.height, bounds.height)
+
+        const maxOffsetX = Math.max(0, bounds.width - width)
+        const maxOffsetY = Math.max(0, bounds.height - height)
+        const cascade = (prev.length % 8) * 24
+
+        const x = Math.min(Math.max(0, Math.floor((bounds.width - width) / 2 + cascade)), maxOffsetX)
+        const y = Math.min(Math.max(0, Math.floor((bounds.height - height) / 2 + cascade)), maxOffsetY)
+
+        const instanceCount = prev.filter(window => window.appType === appType).length
+        nextWindowId = definition.allowMultiple ? `${appType}-${instanceCount + 1}` : appType
+
+        const newWindow = {
+          id: nextWindowId,
+          appType,
+          title: appType,
+          component: definition.component,
+          x,
+          y,
+          width,
+          height,
+          maximized: false,
+          minimized: false,
+          lastBounds: null,
+          isCalculator: appType === 'Calculator'
+        }
+
+        return [...prev, newWindow]
+      })
+
+      if (nextWindowId) {
+        setActiveWindowId(nextWindowId)
+      }
+
+      launchTimersRef.current.delete(timerId)
+    }, launchDelay)
+
+    launchTimersRef.current.add(timerId)
+  }, [addNotification, focusWindow])
+
+  const toggleTheme = useCallback(() => {
+    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'))
+  }, [])
+
+  const lockSystem = useCallback(() => {
+    setIsLocked(true)
+    addNotification('system', 'System locked', {
+      title: 'Security',
+      duration: 2500
+    })
+  }, [addNotification])
+
+  const unlockSystem = useCallback((password) => {
+    if (password === 'portfolio' || password === 'guest') {
+      setIsLocked(false)
+      addNotification('success', 'System unlocked successfully', {
+        title: 'Security',
+        duration: 2500
+      })
+      return true
+    }
+
+    addNotification('error', 'Incorrect password. Try "portfolio"', {
+      title: 'Authentication Error',
+      duration: 3500
+    })
+
+    return false
+  }, [addNotification])
+
+  const deleteIcon = useCallback((iconId) => {
+    setDesktopIcons(prev => {
+      const iconToDelete = prev.find(icon => icon.id === iconId)
+      if (!iconToDelete) {
+        return prev
+      }
+
+      setDeletedIcons(deletedPrev => ([
+        ...deletedPrev,
+        {
+          ...iconToDelete,
+          deletedDate: new Date().toLocaleString(),
+          type: 'application'
+        }
+      ]))
+
+      return prev.filter(icon => icon.id !== iconId)
+    })
+  }, [])
+
+  const restoreIcon = useCallback((icon) => {
+    const { deletedDate: _deletedDate, ...desktopIcon } = icon
+    setDesktopIcons(prev => [...prev, desktopIcon])
+    setDeletedIcons(prev => prev.filter(item => item.id !== icon.id))
+  }, [])
+
+  const deletePermanently = useCallback((icon) => {
+    setDeletedIcons(prev => prev.filter(item => item.id !== icon.id))
+  }, [])
+
+  const updateIconPosition = useCallback((iconId, x, y) => {
+    setDesktopIcons(prev => {
+      const movedIconIndex = prev.findIndex(icon => icon.id === iconId)
+      if (movedIconIndex === -1) {
+        return prev
+      }
+
+      const ICON_WIDTH = 80
+      const ICON_HEIGHT = 70
+      const bounds = getDesktopBounds()
+
+      const snapX = Math.round((x - ICON_MARGIN) / ICON_COLUMN_WIDTH) * ICON_COLUMN_WIDTH + ICON_MARGIN
+      const snapY = Math.round((y - ICON_MARGIN) / ICON_ROW_HEIGHT) * ICON_ROW_HEIGHT + ICON_MARGIN
+
+      const maxX = bounds.width - ICON_WIDTH - ICON_MARGIN
+      const maxY = bounds.height - ICON_HEIGHT - ICON_MARGIN
+
+      let targetX = Math.max(ICON_MARGIN, Math.min(snapX, maxX))
+      let targetY = Math.max(ICON_MARGIN, Math.min(snapY, maxY))
+
+      const overlaps = prev.some(icon => {
+        if (icon.id === iconId) {
+          return false
+        }
+
+        const overlapX = Math.abs(icon.x - targetX) < ICON_WIDTH
+        const overlapY = Math.abs(icon.y - targetY) < ICON_HEIGHT
+
+        return overlapX && overlapY
+      })
+
+      if (overlaps) {
+        for (let col = 0; col < Math.ceil(bounds.width / ICON_COLUMN_WIDTH); col += 1) {
+          for (let row = 0; row < Math.ceil(bounds.height / ICON_ROW_HEIGHT); row += 1) {
+            const candidateX = ICON_MARGIN + col * ICON_COLUMN_WIDTH
+            const candidateY = ICON_MARGIN + row * ICON_ROW_HEIGHT
+
+            if (candidateX > maxX || candidateY > maxY) {
+              continue
+            }
+
+            const occupied = prev.some(icon => {
+              if (icon.id === iconId) {
+                return false
+              }
+
+              return Math.abs(icon.x - candidateX) < ICON_WIDTH && Math.abs(icon.y - candidateY) < ICON_HEIGHT
+            })
+
+            if (!occupied) {
+              targetX = candidateX
+              targetY = candidateY
+              col = Number.POSITIVE_INFINITY
+              break
+            }
+          }
+        }
+      }
+
+      return prev.map(icon => (icon.id === iconId ? { ...icon, x: targetX, y: targetY } : icon))
+    })
+  }, [])
+
+  const renderWindowContent = useCallback((windowState) => {
+    const Component = windowState.component
+
+    const componentProps = windowState.appType === 'Settings'
+      ? { theme, toggleTheme }
+      : windowState.appType === 'Trash Bin'
+        ? { deletedIcons, onRestore: restoreIcon, onDeletePermanently: deletePermanently }
+        : {}
+
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={<div style={{ padding: 16, color: '#9CA3AF' }}>Loading...</div>}>
+          <Component {...componentProps} />
+        </Suspense>
+      </ErrorBoundary>
+    )
+  }, [deletePermanently, deletedIcons, restoreIcon, theme, toggleTheme])
+
+  const windowsWithChildren = useMemo(() => windows.map(windowState => ({
+    ...windowState,
+    children: renderWindowContent(windowState)
+  })), [windows, renderWindowContent])
+
   useEffect(() => {
-    // Alt+Tab - Window switching
+    windowsRef.current = windows
+  }, [windows])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.soundManager = soundManager
+      soundManager.setVolume(0.3)
+    }
+
+    const launchTimers = launchTimersRef.current
+    return () => {
+      launchTimers.forEach(timerId => window.clearTimeout(timerId))
+      launchTimers.clear()
+    }
+  }, [])
+
+  useEffect(() => {
+    const updateDateTime = () => {
+      const now = new Date()
+      setCurrentTime(now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }))
+      setCurrentDate(now.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }))
+    }
+
+    updateDateTime()
+    const interval = setInterval(updateDateTime, 1000)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    const handleResizeNow = () => {
+      const bounds = getDesktopBounds()
+
+      setWindows(prev => prev.map(windowState => {
+        if (windowState.maximized) {
+          return {
+            ...windowState,
+            x: 0,
+            y: 0,
+            width: bounds.width,
+            height: bounds.height
+          }
+        }
+
+        return clampWindowToBounds(windowState, bounds)
+      }))
+
+      setDesktopIcons(prev => {
+        const maxX = bounds.width - 80 - ICON_MARGIN
+        const maxY = bounds.height - 70 - ICON_MARGIN
+
+        return prev.map(icon => ({
+          ...icon,
+          x: Math.max(ICON_MARGIN, Math.min(icon.x, maxX)),
+          y: Math.max(ICON_MARGIN, Math.min(icon.y, maxY))
+        }))
+      })
+    }
+
+    let resizeRaf = 0
+    const handleResize = () => {
+      if (resizeRaf) {
+        cancelAnimationFrame(resizeRaf)
+      }
+
+      resizeRaf = requestAnimationFrame(handleResizeNow)
+    }
+
+    window.addEventListener('resize', handleResize)
+
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      if (resizeRaf) {
+        cancelAnimationFrame(resizeRaf)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
     const altTabUnregister = keyboardManager.registerShortcut({
       id: 'alt-tab',
       keys: ['Alt', 'Tab'],
       action: () => {
-        const visibleWindows = windows.filter(w => !w.minimized);
-        if (visibleWindows.length > 1) {
-          const currentWindowIndex = visibleWindows.findIndex(w => w.id === activeWindowId);
-          const nextIndex = (currentWindowIndex + 1) % visibleWindows.length;
-          focusWindow(visibleWindows[nextIndex].id);
+        const visibleWindows = windows.filter(windowState => !windowState.minimized)
+        if (visibleWindows.length <= 1) {
+          return
         }
+
+        const currentIndex = visibleWindows.findIndex(windowState => windowState.id === activeWindowId)
+        const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % visibleWindows.length
+
+        focusWindow(visibleWindows[nextIndex].id)
       },
       context: 'global',
       description: 'Switch between windows',
       preventDefault: true
-    });
+    })
 
-    // Ctrl+Space - Open Start Search
     const ctrlSpaceUnregister = keyboardManager.registerShortcut({
       id: 'ctrl-space',
       keys: ['Ctrl', 'Space'],
-      action: () => {
-        // Trigger start menu open
-        const event = new CustomEvent('open-start-menu');
-        document.dispatchEvent(event);
-      },
+      action: () => document.dispatchEvent(new CustomEvent('open-start-menu')),
       context: 'global',
       description: 'Open start menu search',
       preventDefault: true
-    });
+    })
 
-    // Ctrl+W - Close active window
     const ctrlWUnregister = keyboardManager.registerShortcut({
       id: 'ctrl-w',
       keys: ['Ctrl', 'KeyW'],
       action: () => {
         if (activeWindowId) {
-          closeWindow(activeWindowId);
+          closeWindow(activeWindowId)
         }
       },
       context: 'global',
       description: 'Close active window',
       preventDefault: true
-    });
+    })
 
-    // Ctrl+` - Open Terminal
     const ctrlBacktickUnregister = keyboardManager.registerShortcut({
       id: 'ctrl-backtick',
       keys: ['Ctrl', 'Backquote'],
-      action: () => {
-        openWindow('Terminal');
-      },
+      action: () => openWindow('Terminal'),
       context: 'global',
       description: 'Open terminal',
       preventDefault: true
-    });
+    })
 
-    // Alt+F4 - Close active window
     const altF4Unregister = keyboardManager.registerShortcut({
       id: 'alt-f4',
       keys: ['Alt', 'F4'],
       action: () => {
         if (activeWindowId) {
-          closeWindow(activeWindowId);
+          closeWindow(activeWindowId)
         }
       },
       context: 'global',
-      description: 'Close active window (Alt+F4)',
+      description: 'Close active window',
       preventDefault: true
-    });
+    })
 
-    // Escape - Close modals/dropdowns
     const escUnregister = keyboardManager.registerShortcut({
       id: 'escape',
       keys: ['Escape'],
-      action: () => {
-        const event = new CustomEvent('escape-pressed');
-        document.dispatchEvent(event);
-      },
+      action: () => document.dispatchEvent(new CustomEvent('escape-pressed')),
       context: 'global',
-      description: 'Close dialogs/modals',
+      description: 'Close menus and overlays',
       preventDefault: true
-    });
+    })
 
-    // Konami Code Easter Egg
+    const lockShortcutUnregister = keyboardManager.registerShortcut({
+      id: 'ctrl-lock',
+      keys: ['Ctrl', 'KeyL'],
+      action: () => lockSystem(),
+      context: 'global',
+      description: 'Lock system',
+      preventDefault: true
+    })
+
     const konamiUnregister = keyboardManager.on('konami-code-activated', () => {
-      addNotification('success', '🎮 Konami Code Activated! Secret mode enabled!', {
+      addNotification('success', 'Konami Code activated', {
         title: 'Easter Egg',
-        duration: 5000
-      });
-      // Add secret visual effect
-      document.body.style.animation = 'glitch 0.3s ease-in-out';
-      setTimeout(() => {
-        document.body.style.animation = '';
-      }, 300);
-    });
+        duration: 3500
+      })
+    })
 
-    // Cleanup function
     return () => {
-      altTabUnregister();
-      ctrlSpaceUnregister();
-      ctrlWUnregister();
-      ctrlBacktickUnregister();
-      altF4Unregister();
-      escUnregister();
-      konamiUnregister();
-    };
-  }, [windows, activeWindowId, openWindow, closeWindow, focusWindow, addNotification]);
-
-  // Phase 3 Lock/Unlock Functions
-  const lockSystem = useCallback(() => {
-    setIsLocked(true);
-    addNotification('system', 'System locked', {
-      title: 'Security',
-      duration: 3000
-    });
-  }, [addNotification]);
-
-  const unlockSystem = useCallback((password) => {
-    // Fake authentication - accept 'portfolio' as password
-    if (password === 'portfolio') {
-      setIsLocked(false);
-      addNotification('success', 'System unlocked successfully', {
-        title: 'Security',
-        duration: 3000
-      });
-      return true;
-    } else {
-      addNotification('error', 'Incorrect password. Try "portfolio"', {
-        title: 'Authentication Error',
-        duration: 4000
-      });
-      return false;
+      altTabUnregister()
+      ctrlSpaceUnregister()
+      ctrlWUnregister()
+      ctrlBacktickUnregister()
+      altF4Unregister()
+      escUnregister()
+      lockShortcutUnregister()
+      konamiUnregister()
     }
-  }, [addNotification]);
+  }, [windows, activeWindowId, focusWindow, closeWindow, openWindow, lockSystem, addNotification])
 
-  const renderComponent = (win) => {
-    const Component = win.component;
-    const componentProps = win.id === 'Settings'
-      ? { theme, toggleTheme }
-      : win.id === 'Trash Bin'
-      ? { deletedIcons, onRestore: restoreIcon, onDeletePermanently: deletePermanently }
-      : {};
+  const handleBootComplete = useCallback(() => {
+    setSystemState('black')
+    window.setTimeout(() => setSystemState('login'), 800)
+  }, [])
 
-    return (
-      <ErrorBoundary>
-        <Component {...componentProps} />
-      </ErrorBoundary>
-    );
-  };
+  const handleLogin = useCallback(() => {
+    if (isAuthenticated || isLoggingIn) {
+      return
+    }
 
-  // Create window objects with rendered children for the Desktop component
-  const windowsWithChildren = windows.map(window => ({
-    ...window,
-    children: renderComponent(window)
-  }));
+    setIsLoggingIn(true)
+    setIsAuthenticated(true)
+    setSystemState('desktop')
 
-// NEW BOOT FLOW RENDER LOGIC
+    window.setTimeout(() => {
+      setIsLoggingIn(false)
+    }, 900)
+  }, [isAuthenticated, isLoggingIn])
+
   if (systemState === 'boot') {
-    return <BootScreen onBootComplete={handleBootComplete} />;
+    return <BootScreen onBootComplete={handleBootComplete} />
   }
-  
+
   if (systemState === 'black') {
-    return <BlackScreen onComplete={() => setSystemState('login')} />;
+    return <BlackScreen onComplete={() => setSystemState('login')} />
   }
-  
+
   if (systemState === 'login') {
     return (
       <LoginScreen
@@ -759,38 +802,31 @@ const getComponent = (appType) => {
         currentTime={currentTime}
         currentDate={currentDate}
       />
-    );
+    )
   }
 
-  // Phase 5: Show mobile fallback on mobile devices
-  // Temporarily bypass mobile fallback for testing
-  if (!mobileWarningAcknowledged && false) {
+  const isLikelyMobile = typeof window !== 'undefined' && window.innerWidth < 768
+
+  if (!mobileWarningAcknowledged && isLikelyMobile) {
     return (
-      <>
-        <MobileFallback
-          onContinue={() => setMobileWarningAcknowledged(true)}
-          onSimplified={() => {
-            setMobileWarningAcknowledged(true);
-            setShowSimplified(true);
-          }}
-        />
-      </>
-    );
+      <MobileFallback
+        onContinue={() => setMobileWarningAcknowledged(true)}
+        onSimplified={() => {
+          setMobileWarningAcknowledged(true)
+          setShowSimplified(true)
+        }}
+      />
+    )
   }
 
-  // Phase 5: Show simplified portfolio on mobile
   if (showSimplified) {
-    return (
-      <SimplifiedPortfolio onClose={() => setShowSimplified(false)} />
-    );
+    return <SimplifiedPortfolio onClose={() => setShowSimplified(false)} />
   }
 
-  // Desktop only renders AFTER successful authentication
   return (
     <>
-      {/* OS Cursor System */}
       <OSCursor />
-      
+
       <div className={`app ${theme}`}>
         <Desktop
           openWindow={openWindow}
@@ -808,18 +844,20 @@ const getComponent = (appType) => {
           addNotification={addNotification}
           isFullscreen={false}
         />
-<Taskbar 
+
+        <Taskbar
           openWindow={openWindow}
           windows={windows}
           activeWindowId={activeWindowId}
+          onWindowAction={handleTaskbarWindowAction}
           addNotification={addNotification}
         />
-        <NotificationCenter 
+
+        <NotificationCenter
           notifications={notifications}
           onRemoveNotification={removeNotification}
         />
-        
-        {/* Lock Screen Overlay */}
+
         <LockScreen
           isVisible={isLocked}
           onUnlock={unlockSystem}

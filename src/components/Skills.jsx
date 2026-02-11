@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react'
 
 const Skills = () => {
-  const [animatedSkills, setAnimatedSkills] = useState({});
-  const [systemStatus, setSystemStatus] = useState('ONLINE');
+  const [animatedSkills, setAnimatedSkills] = useState({})
+  const [systemStatus] = useState('ONLINE')
+  const [telemetry, setTelemetry] = useState({ cpu: '35.0', temp: '45.0' })
 
-  const skillModules = {
+  const skillModules = useMemo(() => ({
     'Frontend.js': [
       { name: 'React', level: 90 },
       { name: 'JavaScript', level: 85 },
@@ -34,39 +35,50 @@ const Skills = () => {
       { name: 'Communication', level: 80 },
       { name: 'Project Management', level: 75 }
     ]
-  };
+  }), [])
 
-  // Animate skill bars on mount
   useEffect(() => {
-    const timers = {};
-    
+    const timers = {}
+
     Object.entries(skillModules).forEach(([moduleName, skills], moduleIndex) => {
       skills.forEach((skill, skillIndex) => {
-        const key = `${moduleName}-${skill.name}`;
+        const key = `${moduleName}-${skill.name}`
         timers[key] = setTimeout(() => {
-          setAnimatedSkills(prev => ({ ...prev, [key]: true }));
-        }, 100 + (moduleIndex * 200) + (skillIndex * 100));
-      });
-    });
+          setAnimatedSkills(prev => ({ ...prev, [key]: true }))
+        }, 100 + moduleIndex * 200 + skillIndex * 100)
+      })
+    })
 
     return () => {
-      Object.values(timers).forEach(timer => clearTimeout(timer));
-    };
-  }, []);
+      Object.values(timers).forEach(timer => clearTimeout(timer))
+    }
+  }, [skillModules])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTelemetry({
+        cpu: (Math.random() * 20 + 30).toFixed(1),
+        temp: (Math.random() * 20 + 40).toFixed(1)
+      })
+    }, 3000)
+
+    return () => clearInterval(interval)
+  }, [])
 
   const getBarColor = (level) => {
-    if (level >= 90) return '#22c55e';  // Green
-    if (level >= 80) return '#3b82f6';  // Blue
-    if (level >= 70) return '#f59e0b';  // Yellow
-    return '#ef4444';  // Red
-  };
+    if (level >= 90) return '#22c55e'
+    if (level >= 80) return '#3b82f6'
+    if (level >= 70) return '#f59e0b'
+    return '#ef4444'
+  }
 
-  const getNeonShadow = (color) => `0 0 10px ${color}, 0 0 20px ${color}, 0 0 30px ${color}`;
+  const getNeonShadow = (color) => `0 0 10px ${color}, 0 0 20px ${color}, 0 0 30px ${color}`
 
   return (
-    <div style={{ 
-      width: '520px',
-      height: '420px',
+    <div style={{
+      width: '100%',
+      height: '100%',
+      minHeight: 0,
       background: '#0a0a0a',
       color: '#00ff00',
       fontFamily: '"Courier New", monospace',
@@ -74,12 +86,10 @@ const Skills = () => {
       padding: '16px',
       overflow: 'hidden',
       position: 'relative',
-      // Fix content scaling for maximized windows
       transform: 'none',
       transformOrigin: 'top left'
     }}>
-      {/* Scan line effect */}
-      <div 
+      <div
         style={{
           position: 'absolute',
           top: 0,
@@ -92,9 +102,8 @@ const Skills = () => {
         }}
       />
 
-      {/* System Header */}
-      <div style={{ 
-        marginBottom: '12px', 
+      <div style={{
+        marginBottom: '12px',
         borderBottom: '1px solid #00ff00',
         paddingBottom: '8px',
         display: 'flex',
@@ -109,22 +118,21 @@ const Skills = () => {
             System Diagnostics Interface
           </div>
         </div>
-        <div style={{ 
-          fontSize: '10px', 
+        <div style={{
+          fontSize: '10px',
           color: systemStatus === 'ONLINE' ? '#00ff00' : '#ff0000',
           background: `${systemStatus === 'ONLINE' ? '#00ff00' : '#ff0000'}20`,
           padding: '2px 6px',
           borderRadius: '2px',
           border: `1px solid ${systemStatus === 'ONLINE' ? '#00ff00' : '#ff0000'}`
         }}>
-          ● {systemStatus}
+          • {systemStatus}
         </div>
       </div>
 
-      {/* Skills Grid */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: '1fr 1fr', 
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
         gap: '12px',
         height: 'calc(100% - 60px)',
         overflow: 'auto'
@@ -137,8 +145,7 @@ const Skills = () => {
             padding: '8px',
             boxShadow: getNeonShadow('#00ff00')
           }}>
-            {/* Module Header */}
-            <div style={{ 
+            <div style={{
               marginBottom: '8px',
               fontSize: '10px',
               color: '#00ff00',
@@ -150,38 +157,28 @@ const Skills = () => {
               alignItems: 'center'
             }}>
               <span>[{moduleName}]</span>
-              <span style={{ fontSize: '8px', color: '#00cc00' }}>
-                LOADED
-              </span>
+              <span style={{ fontSize: '8px', color: '#00cc00' }}>LOADED</span>
             </div>
 
-            {/* Skill Progress Bars */}
-            {skills.map((skill, index) => {
-              const key = `${moduleName}-${skill.name}`;
-              const isAnimated = animatedSkills[key];
-              const barColor = getBarColor(skill.level);
-              
+            {skills.map((skill) => {
+              const key = `${moduleName}-${skill.name}`
+              const isAnimated = animatedSkills[key]
+              const barColor = getBarColor(skill.level)
+
               return (
                 <div key={skill.name} style={{ marginBottom: '6px' }}>
-                  <div style={{ 
-                    display: 'flex', 
+                  <div style={{
+                    display: 'flex',
                     justifyContent: 'space-between',
                     marginBottom: '2px',
                     fontSize: '9px'
                   }}>
-                    <span style={{ color: '#00ff00' }}>
-                      {skill.name.toUpperCase()}
-                    </span>
-                    <span style={{ 
-                      color: barColor,
-                      fontWeight: 'bold',
-                      textShadow: getNeonShadow(barColor)
-                    }}>
+                    <span style={{ color: '#00ff00' }}>{skill.name.toUpperCase()}</span>
+                    <span style={{ color: barColor, fontWeight: 'bold', textShadow: getNeonShadow(barColor) }}>
                       {skill.level}%
                     </span>
                   </div>
-                  
-                  {/* Progress Bar with Neon Effect */}
+
                   <div style={{
                     width: '100%',
                     height: '8px',
@@ -191,7 +188,6 @@ const Skills = () => {
                     overflow: 'hidden',
                     position: 'relative'
                   }}>
-                    {/* Animated fill */}
                     <div style={{
                       width: isAnimated ? `${skill.level}%` : '0%',
                       height: '100%',
@@ -200,28 +196,23 @@ const Skills = () => {
                       transition: 'width 0.8s ease-out',
                       position: 'relative'
                     }}>
-                      {/* Pulsing overlay */}
                       <div style={{
                         position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
+                        inset: 0,
                         background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)',
                         animation: 'pulse 2s ease-in-out infinite'
                       }} />
                     </div>
                   </div>
                 </div>
-              );
+              )
             })}
           </div>
         ))}
       </div>
 
-      {/* System Footer */}
-      <div style={{ 
-        marginTop: '8px', 
+      <div style={{
+        marginTop: '8px',
         borderTop: '1px solid #00ff00',
         paddingTop: '4px',
         fontSize: '8px',
@@ -230,17 +221,16 @@ const Skills = () => {
         justifyContent: 'space-between'
       }}>
         <span>MEMORY: {Object.values(skillModules).flat().length} SKILLS LOADED</span>
-        <span>CPU: {(Math.random() * 20 + 30).toFixed(1)}%</span>
-        <span>TEMP: {(Math.random() * 20 + 40).toFixed(1)}°C</span>
+        <span>CPU: {telemetry.cpu}%</span>
+        <span>TEMP: {telemetry.temp}C</span>
       </div>
 
-      {/* Animation styles */}
       <style>{`
         @keyframes scanline {
           0% { transform: translateY(-100%); }
-          100% { transform: translateY(420px); }
+          100% { transform: translateY(calc(100vh - 48px)); }
         }
-        
+
         @keyframes pulse {
           0%, 100% { opacity: 0.5; }
           50% { opacity: 1; }
@@ -249,18 +239,18 @@ const Skills = () => {
         ::-webkit-scrollbar {
           width: 6px;
         }
-        
+
         ::-webkit-scrollbar-track {
           background: #0a0a0a;
         }
-        
+
         ::-webkit-scrollbar-thumb {
           background: #00ff00;
           border-radius: 3px;
         }
       `}</style>
     </div>
-  );
-};
+  )
+}
 
-export default Skills;
+export default Skills

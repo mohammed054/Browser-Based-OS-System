@@ -6,7 +6,7 @@ class ErrorBoundary extends React.Component {
     this.state = { hasError: false, error: null, errorInfo: null };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError() {
     return { hasError: true };
   }
 
@@ -51,7 +51,7 @@ class ErrorBoundary extends React.Component {
           >
             Refresh Page
           </button>
-          {process.env.NODE_ENV === 'development' && (
+          {import.meta.env.DEV && (
             <details style={{ marginTop: '20px', width: '100%', maxWidth: '600px' }}>
               <summary style={{ cursor: 'pointer', marginBottom: '10px' }}>Error Details (Development)</summary>
               <pre style={{

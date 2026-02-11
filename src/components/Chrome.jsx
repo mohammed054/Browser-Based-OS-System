@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 const Chrome = () => {
   const [url, setUrl] = useState('https://www.google.com');

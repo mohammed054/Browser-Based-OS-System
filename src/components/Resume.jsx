@@ -206,8 +206,9 @@ const Resume = () => {
 
   return (
     <div style={{ 
-      width: '520px',
-      height: '420px',
+      width: '100%',
+      height: '100%',
+      minHeight: 0,
       background: '#f5f5f5',
       display: 'flex',
       flexDirection: 'column',

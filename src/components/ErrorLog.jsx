@@ -1,76 +1,76 @@
 import React, { useState, useEffect, useRef } from 'react';
 
+const LOG_TYPES = [
+  { level: 'INFO', message: 'System initialization complete', module: 'KERNEL' },
+  { level: 'WARN', message: 'Overthinking detected in decision module', module: 'BRAIN' },
+  { level: 'ERROR', message: 'Perfectionism loop detected - auto-breaking', module: 'PSYCHE' },
+  { level: 'INFO', message: 'Coffee level optimal', module: 'BIOMETRICS' },
+  { level: 'WARN', message: 'Too many tabs open in mental browser', module: 'COGNITION' },
+  { level: 'INFO', message: 'Creativity engines running at full capacity', module: 'IMAGINATION' },
+  { level: 'ERROR', message: 'Feature creep detected in project scope', module: 'SCOPE_GUARD' },
+  { level: 'INFO', message: 'GitHub commits synced successfully', module: 'VERSION_CONTROL' },
+  { level: 'WARN', message: 'Stack Overflow addiction threshold reached', module: 'DEVELOPER_HABITS' },
+  { level: 'INFO', message: 'UI/UX balance maintained', module: 'DESIGN_SYSTEM' },
+  { level: 'ERROR', message: 'Could not resist refactoring legacy code', module: 'PROGRAMMER_INSTINCT' },
+  { level: 'INFO', message: 'React hooks functioning normally', module: 'FRONTEND_CORE' },
+  { level: 'WARN', message: 'Imposter syndrome monitor requires attention', module: 'CONFIDENCE_SYSTEM' },
+  { level: 'INFO', message: 'Code review session completed peacefully', module: 'TEAM_COLLABORATION' },
+  { level: 'ERROR', message: 'Syntax error in coffee brewing algorithm', module: 'MORNING_ROUTINE' },
+  { level: 'INFO', message: 'Portfolio components loading...', module: 'PORTFOLIO_OS' },
+  { level: 'WARN', message: 'Animation timing slightly off by 16ms', module: 'PRECISION_ENGINE' },
+  { level: 'INFO', message: 'CSS-in-JS converter functioning', module: 'STYLE_SYSTEM' },
+  { level: 'ERROR', message: 'Cannot resist adding one more feature', module: 'FEATURE_ADDICTION' },
+  { level: 'INFO', message: 'State management stable', module: 'REDUX_STORE' },
+  { level: 'WARN', message: 'Over-engineering alert: simple solution available', module: 'COMPLEXITY_MONITOR' },
+  { level: 'INFO', message: 'Terminal emulator ready for commands', module: 'TERMINAL_SYS' },
+  { level: 'ERROR', message: 'Failed to resist using latest JavaScript feature', module: 'TECH_LUST' },
+  { level: 'INFO', message: 'Window manager coordinates calculated', module: 'UI_LAYOUT' },
+  { level: 'WARN', message: 'Debug console flooding with console.log statements', module: 'DEVELOPER_HABITS' },
+  { level: 'INFO', message: 'Browser compatibility verified', module: 'CROSS_PLATFORM' },
+  { level: 'ERROR', message: 'Cannot resist optimizing already fast code', module: 'PERFECTIONISM' },
+  { level: 'INFO', message: 'Component lifecycle hooks active', module: 'REACT_CORE' },
+  { level: 'WARN', message: 'Documentation slightly out of date', module: 'DOCS_MAINTENANCE' },
+  { level: 'INFO', message: 'Responsive design breakpoints set', module: 'CSS_GRID' },
+  { level: 'ERROR', message: 'Infinite loop in "just one more tweak" function', module: 'CODING_SESSION' },
+  { level: 'INFO', message: 'Lazy loading strategy implemented', module: 'PERFORMANCE' },
+  { level: 'WARN', message: 'Color contrast ratio slightly below WCAG AA', module: 'ACCESSIBILITY' },
+  { level: 'INFO', message: 'Animation frames per second: 60', module: 'RENDER_ENGINE' },
+  { level: 'ERROR', message: 'Bug actually was a feature all along', module: 'CLASSIC_MISTAKE' }
+];
+
+function generateFakeLog() {
+  return LOG_TYPES[Math.floor(Math.random() * LOG_TYPES.length)];
+}
+
+function createInitialLogs() {
+  const initialLogs = [];
+  const startTime = Date.now() - 60000;
+  for (let i = 0; i < 15; i++) {
+    const log = generateFakeLog();
+    const timestamp = startTime + (i * 4000);
+    initialLogs.push({
+      ...log,
+      timestamp,
+      id: `log-${timestamp}-${Math.random()}`
+    });
+  }
+  return initialLogs.sort((a, b) => b.timestamp - a.timestamp);
+}
+
 const ErrorLog = () => {
-  const [logs, setLogs] = useState([]);
+  const [logs, setLogs] = useState(() => createInitialLogs());
   const [isLive, setIsLive] = useState(true);
   const [filterLevel, setFilterLevel] = useState('all');
   
   // Phase 5: Dynamic system stats based on user interactions
   const [systemUptime, setSystemUptime] = useState(0);
   const [userActions, setUserActions] = useState(0);
-  const startTimeRef = useRef(Date.now());
-
-  const generateFakeLog = () => {
-    const logTypes = [
-      { level: 'INFO', message: 'System initialization complete', module: 'KERNEL' },
-      { level: 'WARN', message: 'Overthinking detected in decision module', module: 'BRAIN' },
-      { level: 'ERROR', message: 'Perfectionism loop detected - auto-breaking', module: 'PSYCHE' },
-      { level: 'INFO', message: 'Coffee level optimal', module: 'BIOMETRICS' },
-      { level: 'WARN', message: 'Too many tabs open in mental browser', module: 'COGNITION' },
-      { level: 'INFO', message: 'Creativity engines running at full capacity', module: 'IMAGINATION' },
-      { level: 'ERROR', message: 'Feature creep detected in project scope', module: 'SCOPE_GUARD' },
-      { level: 'INFO', message: 'GitHub commits synced successfully', module: 'VERSION_CONTROL' },
-      { level: 'WARN', message: 'Stack Overflow addiction threshold reached', module: 'DEVELOPER_HABITS' },
-      { level: 'INFO', message: 'UI/UX balance maintained', module: 'DESIGN_SYSTEM' },
-      { level: 'ERROR', message: 'Could not resist refactoring legacy code', module: 'PROGRAMMER_INSTINCT' },
-      { level: 'INFO', message: 'React hooks functioning normally', module: 'FRONTEND_CORE' },
-      { level: 'WARN', message: 'Imposter syndrome monitor requires attention', module: 'CONFIDENCE_SYSTEM' },
-      { level: 'INFO', message: 'Code review session completed peacefully', module: 'TEAM_COLLABORATION' },
-      { level: 'ERROR', message: 'Syntax error in coffee brewing algorithm', module: 'MORNING_ROUTINE' },
-      { level: 'INFO', message: 'Portfolio components loading...', module: 'PORTFOLIO_OS' },
-      { level: 'WARN', message: 'Animation timing slightly off by 16ms', module: 'PRECISION_ENGINE' },
-      { level: 'INFO', message: 'CSS-in-JS converter functioning', module: 'STYLE_SYSTEM' },
-      { level: 'ERROR', message: 'Cannot resist adding one more feature', module: 'FEATURE_ADDICTION' },
-      { level: 'INFO', message: 'State management stable', module: 'REDUX_STORE' },
-      { level: 'WARN', message: 'Over-engineering alert: simple solution available', module: 'COMPLEXITY_MONITOR' },
-      { level: 'INFO', message: 'Terminal emulator ready for commands', module: 'TERMINAL_SYS' },
-      { level: 'ERROR', message: 'Failed to resist using latest JavaScript feature', module: 'TECH_LUST' },
-      { level: 'INFO', message: 'Window manager coordinates calculated', module: 'UI_LAYOUT' },
-      { level: 'WARN', message: 'Debug console flooding with console.log statements', module: 'DEVELOPER_HABITS' },
-      { level: 'INFO', message: 'Browser compatibility verified', module: 'CROSS_PLATFORM' },
-      { level: 'ERROR', message: 'Cannot resist optimizing already fast code', module: 'PERFECTIONISM' },
-      { level: 'INFO', message: 'Component lifecycle hooks active', module: 'REACT_CORE' },
-      { level: 'WARN', message: 'Documentation slightly out of date', module: 'DOCS_MAINTENANCE' },
-      { level: 'INFO', message: 'Responsive design breakpoints set', module: 'CSS_GRID' },
-      { level: 'ERROR', message: 'Infinite loop in "just one more tweak" function', module: 'CODING_SESSION' },
-      { level: 'INFO', message: 'Lazy loading strategy implemented', module: 'PERFORMANCE' },
-      { level: 'WARN', message: 'Color contrast ratio slightly below WCAG AA', module: 'ACCESSIBILITY' },
-      { level: 'INFO', message: 'Animation frames per second: 60', module: 'RENDER_ENGINE' },
-      { level: 'ERROR', message: 'Bug actually was a feature all along', module: 'CLASSIC_MISTAKE' }
-    ];
-
-    return logTypes[Math.floor(Math.random() * logTypes.length)];
-  };
-
-  const initializeLogs = () => {
-    const initialLogs = [];
-    const startTime = Date.now() - 60000; // Start from 1 minute ago
-
-    for (let i = 0; i < 15; i++) {
-      const log = generateFakeLog();
-      const timestamp = startTime + (i * 4000);
-      initialLogs.push({
-        ...log,
-        timestamp,
-        id: `log-${timestamp}-${Math.random()}`
-      });
-    }
-    
-    return initialLogs.sort((a, b) => b.timestamp - a.timestamp);
-  };
+  const startTimeRef = useRef(0);
 
   useEffect(() => {
-    setLogs(initializeLogs());
+    if (!startTimeRef.current) {
+      startTimeRef.current = Date.now();
+    }
     
     // Update system uptime
     const updateUptime = () => {
@@ -144,8 +144,9 @@ const ErrorLog = () => {
 
   return (
     <div style={{ 
-      width: '520px',
-      height: '420px',
+      width: '100%',
+      height: '100%',
+      minHeight: 0,
       background: '#0a0a0a',
       color: '#ff0000',
       fontFamily: '"Courier New", monospace',
@@ -153,6 +154,8 @@ const ErrorLog = () => {
       padding: '16px',
       overflow: 'hidden',
       position: 'relative',
+      display: 'flex',
+      flexDirection: 'column',
       // Fix content scaling for maximized windows
       transform: 'none',
       transformOrigin: 'top left'

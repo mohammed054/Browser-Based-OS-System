@@ -1,488 +1,368 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { createWindowStyle, theme } from '../../theme';
+﻿import { useState, useRef, useEffect, useCallback } from 'react'
+import { createWindowStyle, theme } from '../../theme'
 
-/**
- * Redesigned Window Frame Component
- * Modern styling with smooth animations and improved interactions
- */
-const WindowFrame = ({ 
-  title, 
-  children, 
-  x, 
-  y, 
-  width, 
-  height, 
-  maximized, 
-  minimized, 
-  id, 
-  onClose, 
-  onFocus, 
-  onPositionChange, 
-  onSizeChange, 
-  onToggleMaximize, 
-  onMinimize, 
-  isActive, 
-  isCalculator = false 
+const MIN_WINDOW_WIDTH = 260
+const MIN_WINDOW_HEIGHT = 180
+
+function getDesktopRect(frameRef) {
+  const desktop = frameRef.current?.closest('.desktop')
+  if (desktop) {
+    return desktop.getBoundingClientRect()
+  }
+
+  return {
+    left: 0,
+    top: 0,
+    width: window.innerWidth,
+    height: Math.max(320, window.innerHeight - 48)
+  }
+}
+
+function clampPosition(position, size, desktopRect) {
+  return {
+    x: Math.max(0, Math.min(position.x, Math.max(0, desktopRect.width - size.width))),
+    y: Math.max(0, Math.min(position.y, Math.max(0, desktopRect.height - size.height)))
+  }
+}
+
+const WindowFrame = ({
+  title,
+  children,
+  x,
+  y,
+  width,
+  height,
+  maximized,
+  minimized,
+  id,
+  onClose,
+  onFocus,
+  onPositionChange,
+  onSizeChange,
+  onToggleMaximize,
+  onMinimize,
+  isActive,
+  isCalculator = false
 }) => {
-  const [isDragging, setIsDragging] = useState(false);
-  const [isResizing, setIsResizing] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
-  const [resizeDirection, setResizeDirection] = useState('');
-  const [lastClickTime, setLastClickTime] = useState(0);
-  const [animationState, setAnimationState] = useState('');
-  const [wasMinimized, setWasMinimized] = useState(minimized);
-  const windowRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false)
+  const [isResizing, setIsResizing] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
 
-  const handleMouseDown = (e) => {
-    if (e.target.closest('.window-buttons')) return; // Don't drag if clicking buttons
-
-    // Handle double-click detection (disabled for calculator)
-    const currentTime = Date.now();
-    if (currentTime - lastClickTime < 300 && !isCalculator) { // Double-click within 300ms
-      onToggleMaximize();
-      setLastClickTime(0);
-      return; // Don't start dragging on double-click
-    } else {
-      setLastClickTime(currentTime);
-    }
-
-    // If maximized, restore on drag start (Windows behavior)
-    if (maximized) {
-      onToggleMaximize();
-      // After restore, continue with drag using the restored position
-      setTimeout(() => {
-        setIsDragging(true);
-        setDragStart({
-          x: e.clientX - x,
-          y: e.clientY - y
-        });
-      }, 0);
-      return;
-    }
-
-    setIsDragging(true);
-    setDragStart({
-      x: e.clientX - x,
-      y: e.clientY - y
-    });
-    onFocus(); // Bring to front
-  };
+  const frameRef = useRef(null)
+  const dragRef = useRef(null)
+  const resizeRef = useRef(null)
 
   useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (!isDragging) return;
-      let newX = e.clientX - dragStart.x;
-      let newY = e.clientY - dragStart.y;
+    let mountRaf = requestAnimationFrame(() => setIsMounted(true))
+    return () => cancelAnimationFrame(mountRaf)
+  }, [])
 
-      // Boundaries relative to desktop container
-      newX = Math.max(0, newX); // Left edge
-      newY = Math.max(0, newY); // Top edge (no padding for maximized compatibility)
+  const stopDragging = useCallback(() => {
+    dragRef.current = null
+    setIsDragging(false)
+  }, [])
 
-      // Get the desktop container bounds
-      const desktopElement = windowRef.current?.parentElement?.parentElement;
-      if (desktopElement) {
-        const desktopRect = desktopElement.getBoundingClientRect();
-        // Convert width/height to numbers for boundary calculations
-        const numericWidth = typeof width === 'string' ? (width === '100%' ? desktopRect.width : parseInt(width)) : width;
-        const numericHeight = typeof height === 'string' ? (height === '100%' ? desktopRect.height : parseInt(height)) : height;
-        const maxX = desktopRect.width - numericWidth;
-        const maxY = desktopRect.height - numericHeight;
-        newX = Math.min(newX, maxX);
-        newY = Math.min(newY, maxY);
+  const stopResizing = useCallback(() => {
+    resizeRef.current = null
+    setIsResizing(false)
+  }, [])
+
+  useEffect(() => {
+    if (!isDragging && !isResizing) {
+      return undefined
+    }
+
+    const handleMouseMove = (event) => {
+      if (dragRef.current) {
+        const desktopRect = getDesktopRect(frameRef)
+        const nextPosition = {
+          x: event.clientX - dragRef.current.offsetX,
+          y: event.clientY - dragRef.current.offsetY
+        }
+
+        const clamped = clampPosition(nextPosition, { width, height }, desktopRect)
+        onPositionChange(id, clamped.x, clamped.y)
+        return
       }
 
-      onPositionChange(id, newX, newY);
-    };
+      if (!resizeRef.current) {
+        return
+      }
+
+      const desktopRect = getDesktopRect(frameRef)
+      const resizeState = resizeRef.current
+
+      const deltaX = event.clientX - resizeState.startClientX
+      const deltaY = event.clientY - resizeState.startClientY
+
+      let nextX = resizeState.startX
+      let nextY = resizeState.startY
+      let nextWidth = resizeState.startWidth
+      let nextHeight = resizeState.startHeight
+
+      if (resizeState.direction.includes('e')) {
+        nextWidth = resizeState.startWidth + deltaX
+      }
+
+      if (resizeState.direction.includes('s')) {
+        nextHeight = resizeState.startHeight + deltaY
+      }
+
+      if (resizeState.direction.includes('w')) {
+        nextWidth = resizeState.startWidth - deltaX
+        nextX = resizeState.startX + deltaX
+      }
+
+      if (resizeState.direction.includes('n')) {
+        nextHeight = resizeState.startHeight - deltaY
+        nextY = resizeState.startY + deltaY
+      }
+
+      nextWidth = Math.max(MIN_WINDOW_WIDTH, nextWidth)
+      nextHeight = Math.max(MIN_WINDOW_HEIGHT, nextHeight)
+
+      if (nextX < 0) {
+        nextWidth += nextX
+        nextX = 0
+      }
+
+      if (nextY < 0) {
+        nextHeight += nextY
+        nextY = 0
+      }
+
+      nextWidth = Math.min(nextWidth, desktopRect.width - nextX)
+      nextHeight = Math.min(nextHeight, desktopRect.height - nextY)
+
+      onPositionChange(id, nextX, nextY)
+      onSizeChange(id, nextWidth, nextHeight)
+    }
 
     const handleMouseUp = () => {
-      setIsDragging(false);
-    };
-
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      stopDragging()
+      stopResizing()
     }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging, dragStart, onPositionChange]);
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [height, id, isDragging, isResizing, onPositionChange, onSizeChange, stopDragging, stopResizing, width])
 
-  useEffect(() => {
-    const handleResizeMouseMove = (e) => {
-      if (!isResizing) return;
-
-      const deltaX = e.clientX - resizeStart.x;
-      const deltaY = e.clientY - resizeStart.y;
-
-      let newWidth = resizeStart.width;
-      let newHeight = resizeStart.height;
-      let newX = resizeStart.startX;
-      let newY = resizeStart.startY;
-
-      const MIN_WIDTH = 200;
-      const MIN_HEIGHT = 150;
-
-      switch (resizeDirection) {
-        case 'e':
-          newWidth = Math.max(MIN_WIDTH, resizeStart.width + deltaX);
-          break;
-        case 'w':
-          const potentialWidth = Math.max(MIN_WIDTH, resizeStart.width - deltaX);
-          const potentialX = resizeStart.startX + (resizeStart.width - potentialWidth);
-          if (potentialX >= 0) {
-            newWidth = potentialWidth;
-            newX = potentialX;
-          }
-          break;
-        case 's':
-          newHeight = Math.max(MIN_HEIGHT, resizeStart.height + deltaY);
-          // Prevent resizing beyond desktop container
-          {
-            const desktopElement = windowRef.current?.parentElement?.parentElement;
-            if (desktopElement) {
-              const desktopRect = desktopElement.getBoundingClientRect();
-              const maxHeight = desktopRect.height - newY;
-              newHeight = Math.min(newHeight, maxHeight);
-            }
-          }
-          break;
-        case 'n':
-          const potentialHeight = Math.max(MIN_HEIGHT, resizeStart.height - deltaY);
-          const potentialY = resizeStart.startY + (resizeStart.height - potentialHeight);
-          if (potentialY >= 0) { // Allow resizing to top edge
-            newHeight = potentialHeight;
-            newY = potentialY;
-          }
-          break;
-        case 'se':
-          newWidth = Math.max(MIN_WIDTH, resizeStart.width + deltaX);
-          newHeight = Math.max(MIN_HEIGHT, resizeStart.height + deltaY);
-          // Prevent resizing beyond desktop container
-          {
-            const desktopElement = windowRef.current?.parentElement?.parentElement;
-            if (desktopElement) {
-              const desktopRect = desktopElement.getBoundingClientRect();
-              const maxHeight = desktopRect.height - newY;
-              const maxWidth = desktopRect.width - newX;
-              newHeight = Math.min(newHeight, maxHeight);
-              newWidth = Math.min(newWidth, maxWidth);
-            }
-          }
-          break;
-        case 'sw':
-          {
-            const potentialWidth = Math.max(MIN_WIDTH, resizeStart.width - deltaX);
-            const potentialX = resizeStart.startX + (resizeStart.width - potentialWidth);
-            if (potentialX >= 0) {
-              newWidth = potentialWidth;
-              newX = potentialX;
-            }
-            newHeight = Math.max(MIN_HEIGHT, resizeStart.height + deltaY);
-            // Prevent resizing beyond desktop container
-            const desktopElement = windowRef.current?.parentElement?.parentElement;
-            if (desktopElement) {
-              const desktopRect = desktopElement.getBoundingClientRect();
-              const maxHeight = desktopRect.height - newY;
-              newHeight = Math.min(newHeight, maxHeight);
-            }
-          }
-          break;
-        case 'ne':
-          newWidth = Math.max(MIN_WIDTH, resizeStart.width + deltaX);
-          {
-            const potentialHeight = Math.max(MIN_HEIGHT, resizeStart.height - deltaY);
-            const potentialY = resizeStart.startY + (resizeStart.height - potentialHeight);
-            if (potentialY >= 0) { // Allow resizing to top edge
-              newHeight = potentialHeight;
-              newY = potentialY;
-            }
-            // Prevent resizing beyond desktop container width
-            const desktopElement = windowRef.current?.parentElement?.parentElement;
-            if (desktopElement) {
-              const desktopRect = desktopElement.getBoundingClientRect();
-              const maxWidth = desktopRect.width - newX;
-              newWidth = Math.min(newWidth, maxWidth);
-            }
-          }
-          break;
-        case 'nw':
-          {
-            const potentialWidth = Math.max(MIN_WIDTH, resizeStart.width - deltaX);
-            const potentialX = resizeStart.startX + (resizeStart.width - potentialWidth);
-            if (potentialX >= 0) {
-              newWidth = potentialWidth;
-              newX = potentialX;
-            }
-            const potentialHeight = Math.max(MIN_HEIGHT, resizeStart.height - deltaY);
-            const potentialY = resizeStart.startY + (resizeStart.height - potentialHeight);
-            if (potentialY >= 0) { // Allow resizing to top edge
-              newHeight = potentialHeight;
-              newY = potentialY;
-            }
-          }
-          break;
-      }
-
-      onSizeChange(id, newWidth, newHeight);
-      if (newX !== resizeStart.startX || newY !== resizeStart.startY) {
-        onPositionChange(id, newX, newY);
-      }
-    };
-
-    const handleResizeMouseUp = () => {
-      setIsResizing(false);
-      setResizeDirection('');
-    };
-
-    if (isResizing) {
-      document.addEventListener('mousemove', handleResizeMouseMove);
-      document.addEventListener('mouseup', handleResizeMouseUp);
+  const handleTitlebarMouseDown = useCallback((event) => {
+    if (event.button !== 0 || event.target.closest('.window-buttons')) {
+      return
     }
 
-    return () => {
-      document.removeEventListener('mousemove', handleResizeMouseMove);
-      document.removeEventListener('mouseup', handleResizeMouseUp);
-    };
-  }, [isResizing, resizeDirection, resizeStart, onSizeChange, onPositionChange, id]);
+    event.preventDefault()
+    onFocus()
 
-  const handleResizeMouseDown = (direction) => (e) => {
-    if (maximized) return; // Don't allow resizing when maximized
-    e.preventDefault();
-    e.stopPropagation();
-    setIsResizing(true);
-    setResizeDirection(direction);
-    setResizeStart({
-      x: e.clientX,
-      y: e.clientY,
-      width: typeof width === 'string' ? (width === '100%' ? window.innerWidth : parseInt(width)) : width,
-      height: typeof height === 'string' ? (height === '100%' ? window.innerHeight - 48 : parseInt(height)) : height,
-      startX: x,
-      startY: y
-    });
-    onFocus();
-  };
-
-  const handleMaximizeClick = (e) => {
-    e.stopPropagation();
-    if (!isCalculator) {
-      onToggleMaximize();
-    }
-  };
-
-  const handleMinimizeClick = (e) => {
-    e.stopPropagation();
-    setAnimationState('minimizing');
-    // Delay the actual minimize to allow animation to play
-    setTimeout(() => {
-      onMinimize();
-      setAnimationState('');
-    }, 180);
-  };
-
-  // Handle minimize state changes for restore animation
-  useEffect(() => {
-    if (wasMinimized && !minimized) {
-      // Window is being restored from minimized
-      setAnimationState('restoring');
-      setTimeout(() => setAnimationState(''), 180);
-    }
-    setWasMinimized(minimized);
-  }, [minimized, wasMinimized]);
-
-  // Handle initial render (window opening)
-  useEffect(() => {
-    setAnimationState('opening');
-    setTimeout(() => setAnimationState(''), 180);
-  }, []);
-
-  // Handle maximize state changes for smooth transitions
-  useEffect(() => {
     if (maximized) {
-      setAnimationState('maximizing');
-      setTimeout(() => setAnimationState(''), 180);
-    } else if (!maximized && animationState === 'maximizing') {
-      setAnimationState('restoring-maximize');
-      setTimeout(() => setAnimationState(''), 180);
+      return
     }
-  }, [maximized, animationState]);
 
-  const containerStyle = { 
-    left: x, 
-    top: y, 
-    zIndex: isDragging || isResizing ? theme.zIndex.windowDragging : (isActive ? theme.zIndex.window : theme.zIndex.window - 10)
-  };
-  
-  const frameStyle = { 
-    width: width, 
-    height: height, 
-    display: minimized ? 'none' : 'flex',
+    dragRef.current = {
+      offsetX: event.clientX - x,
+      offsetY: event.clientY - y
+    }
+
+    setIsDragging(true)
+  }, [maximized, onFocus, x, y])
+
+  const handleResizeMouseDown = useCallback((direction) => (event) => {
+    if (event.button !== 0 || maximized) {
+      return
+    }
+
+    event.preventDefault()
+    event.stopPropagation()
+    onFocus()
+
+    resizeRef.current = {
+      direction,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startX: x,
+      startY: y,
+      startWidth: width,
+      startHeight: height
+    }
+
+    setIsResizing(true)
+  }, [height, maximized, onFocus, width, x, y])
+
+  const handleMaximizeClick = useCallback((event) => {
+    event.stopPropagation()
+    if (!isCalculator) {
+      onToggleMaximize()
+    }
+  }, [isCalculator, onToggleMaximize])
+
+  const handleMinimizeClick = useCallback((event) => {
+    event.stopPropagation()
+    onMinimize()
+  }, [onMinimize])
+
+  if (minimized) {
+    return null
+  }
+
+  const containerStyle = {
+    position: 'absolute',
+    left: x,
+    top: y,
+    zIndex: isDragging || isResizing ? theme.zIndex.windowDragging : (isActive ? theme.zIndex.window + 10 : theme.zIndex.window)
+  }
+
+  const frameStyle = {
+    width,
+    height,
+    display: 'flex',
+    flexDirection: 'column',
+    opacity: isMounted ? 1 : 0,
+    transform: isMounted ? 'translateY(0)' : 'translateY(8px)',
+    transition: 'opacity 180ms ease-out, transform 180ms ease-out',
+    borderRadius: maximized ? 0 : theme.dimensions.windowBorderRadius,
     ...createWindowStyle(isActive)
-  };
+  }
+
+  const resizeHandleStyles = {
+    top: { position: 'absolute', top: -3, left: 8, right: 8, height: 6, cursor: 'ns-resize', zIndex: theme.zIndex.windowDragging + 1 },
+    bottom: { position: 'absolute', bottom: -3, left: 8, right: 8, height: 6, cursor: 'ns-resize', zIndex: theme.zIndex.windowDragging + 1 },
+    left: { position: 'absolute', top: 8, bottom: 8, left: -3, width: 6, cursor: 'ew-resize', zIndex: theme.zIndex.windowDragging + 1 },
+    right: { position: 'absolute', top: 8, bottom: 8, right: -3, width: 6, cursor: 'ew-resize', zIndex: theme.zIndex.windowDragging + 1 },
+    topLeft: { position: 'absolute', top: -3, left: -3, width: 10, height: 10, cursor: 'nwse-resize', zIndex: theme.zIndex.windowDragging + 1 },
+    topRight: { position: 'absolute', top: -3, right: -3, width: 10, height: 10, cursor: 'nesw-resize', zIndex: theme.zIndex.windowDragging + 1 },
+    bottomLeft: { position: 'absolute', bottom: -3, left: -3, width: 10, height: 10, cursor: 'nesw-resize', zIndex: theme.zIndex.windowDragging + 1 },
+    bottomRight: { position: 'absolute', bottom: -3, right: -3, width: 10, height: 10, cursor: 'nwse-resize', zIndex: theme.zIndex.windowDragging + 1 }
+  }
 
   return (
-    <div className="window-container" style={containerStyle}>
-      {/* Resize handles - only show when not maximized */}
+    <div className="window-container" style={containerStyle} onMouseDown={onFocus}>
       {!maximized && (
         <>
-          <div className="resize-handle top" onMouseDown={handleResizeMouseDown('n')} />
-          <div className="resize-handle bottom" onMouseDown={handleResizeMouseDown('s')} />
-          <div className="resize-handle left" onMouseDown={handleResizeMouseDown('w')} />
-          <div className="resize-handle right" onMouseDown={handleResizeMouseDown('e')} />
-          <div className="resize-handle top-left" onMouseDown={handleResizeMouseDown('nw')} />
-          <div className="resize-handle top-right" onMouseDown={handleResizeMouseDown('ne')} />
-          <div className="resize-handle bottom-left" onMouseDown={handleResizeMouseDown('sw')} />
-          <div className="resize-handle bottom-right" onMouseDown={handleResizeMouseDown('se')} />
+          <div className="resize-handle top" style={resizeHandleStyles.top} onMouseDown={handleResizeMouseDown('n')} />
+          <div className="resize-handle bottom" style={resizeHandleStyles.bottom} onMouseDown={handleResizeMouseDown('s')} />
+          <div className="resize-handle left" style={resizeHandleStyles.left} onMouseDown={handleResizeMouseDown('w')} />
+          <div className="resize-handle right" style={resizeHandleStyles.right} onMouseDown={handleResizeMouseDown('e')} />
+          <div className="resize-handle top-left" style={resizeHandleStyles.topLeft} onMouseDown={handleResizeMouseDown('nw')} />
+          <div className="resize-handle top-right" style={resizeHandleStyles.topRight} onMouseDown={handleResizeMouseDown('ne')} />
+          <div className="resize-handle bottom-left" style={resizeHandleStyles.bottomLeft} onMouseDown={handleResizeMouseDown('sw')} />
+          <div className="resize-handle bottom-right" style={resizeHandleStyles.bottomRight} onMouseDown={handleResizeMouseDown('se')} />
         </>
       )}
 
-      <div
-        ref={windowRef}
-        className={`window-frame ${isActive ? 'active' : 'inactive'} ${isResizing ? 'resizing' : ''} ${maximized ? 'maximized' : ''} ${animationState}`}
-        style={frameStyle}
-        onClick={onFocus}
-      >
-        <div 
-          className="window-titlebar" 
-          onMouseDown={handleMouseDown}
+      <div ref={frameRef} className={`window-frame ${isActive ? 'active' : 'inactive'} ${maximized ? 'maximized' : ''}`} style={frameStyle}>
+        <div
+          className="window-titlebar"
+          onMouseDown={handleTitlebarMouseDown}
+          onDoubleClick={() => !isCalculator && onToggleMaximize()}
           style={{
             height: theme.dimensions.windowHeaderHeight,
             backgroundColor: theme.colors.panel,
-            borderBottom: `1px solid ${theme.colors.accentPrimary}30`,
+            borderBottom: `1px solid ${theme.colors.accentPrimary}33`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: `0 ${theme.spacing.lg}`,
-            cursor: 'move',
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)'
+            padding: `0 ${theme.spacing.md}`,
+            userSelect: 'none'
           }}
         >
-          <div 
+          <div
             className="window-title"
             style={{
               fontFamily: theme.typography.heading,
               fontSize: theme.typography.sizes.base,
               fontWeight: theme.typography.weights.medium,
-              color: theme.colors.textPrimary,
-              userSelect: 'none',
-              textShadow: isActive ? `0 0 10px ${theme.colors.accentPrimary}40` : 'none'
+              color: theme.colors.textPrimary
             }}
-          >{title}</div>
-          <div className="window-buttons" style={{ display: 'flex', gap: '0' }}>
-            <button 
-              className="window-button minimize" 
+          >
+            {title}
+          </div>
+
+          <div className="window-buttons" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <button
+              type="button"
+              className="window-button minimize"
               onClick={handleMinimizeClick}
               style={{
-                backgroundColor: theme.colors.accentSecondary, // #FACC15 - Yellow
-                color: theme.colors.textInverted,
-                transition: theme.animations.hover,
+                width: '18px',
+                height: '18px',
+                borderRadius: '50%',
                 border: 'none',
-                boxShadow: `0 0 10px ${theme.colors.accentSecondary}50`
+                background: '#FACC15',
+                color: '#0B0F14',
+                padding: 0,
+                lineHeight: 1,
+                fontSize: '11px'
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'scale(1.05)';
-                e.currentTarget.style.boxShadow = `0 0 20px ${theme.colors.accentSecondary}80`;
-                e.currentTarget.style.filter = 'brightness(1.2)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'scale(1)';
-                e.currentTarget.style.boxShadow = `0 0 10px ${theme.colors.accentSecondary}50`;
-                e.currentTarget.style.filter = 'brightness(1)';
-              }}
-            >—</button>
+            >
+              -
+            </button>
+
             <button
+              type="button"
               className={`window-button maximize ${isCalculator ? 'disabled' : ''}`}
               onClick={handleMaximizeClick}
               disabled={isCalculator}
               style={{
-                backgroundColor: isCalculator ? 'transparent' : theme.colors.accentTertiary, // #22C55E - Green
-                color: isCalculator ? theme.colors.textPrimary : theme.colors.textInverted,
-                transition: theme.animations.hover,
-                border: isCalculator ? `1px solid ${theme.colors.accentPrimary}30` : 'none',
-                boxShadow: isCalculator ? 'none' : `0 0 10px ${theme.colors.accentTertiary}50`,
-                cursor: isCalculator ? 'not-allowed' : 'pointer',
+                width: '18px',
+                height: '18px',
+                borderRadius: '50%',
+                border: 'none',
+                background: isCalculator ? '#374151' : '#22C55E',
+                color: '#0B0F14',
+                padding: 0,
+                lineHeight: 1,
+                fontSize: '11px',
                 opacity: isCalculator ? 0.5 : 1
               }}
-              onMouseEnter={(e) => {
-                if (!isCalculator) {
-                  e.currentTarget.style.transform = 'scale(1.05)';
-                  e.currentTarget.style.boxShadow = `0 0 20px ${theme.colors.accentTertiary}80`;
-                  e.currentTarget.style.filter = 'brightness(1.2)';
-                }
+            >
+              +
+            </button>
+
+            <button
+              type="button"
+              className="window-button close"
+              onClick={(event) => {
+                event.stopPropagation()
+                onClose()
               }}
-              onMouseLeave={(e) => {
-                if (!isCalculator) {
-                  e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.boxShadow = `0 0 10px ${theme.colors.accentTertiary}50`;
-                  e.currentTarget.style.filter = 'brightness(1)';
-                }
-              }}
-            >□</button>
-            <button 
-              className="window-button close" 
-              onClick={(e) => { e.stopPropagation(); onClose(); }}
               style={{
-                backgroundColor: theme.colors.accentQuaternary, // #EF4444 - Red
-                color: theme.colors.textInverted,
-                transition: theme.animations.hover,
+                width: '18px',
+                height: '18px',
+                borderRadius: '50%',
                 border: 'none',
-                boxShadow: `0 0 10px ${theme.colors.accentQuaternary}50`
+                background: '#EF4444',
+                color: '#0B0F14',
+                padding: 0,
+                lineHeight: 1,
+                fontSize: '11px'
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'scale(1.05)';
-                e.currentTarget.style.boxShadow = `0 0 20px ${theme.colors.accentQuaternary}80`;
-                e.currentTarget.style.filter = 'brightness(1.2)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'scale(1)';
-                e.currentTarget.style.boxShadow = `0 0 10px ${theme.colors.accentQuaternary}50`;
-                e.currentTarget.style.filter = 'brightness(1)';
-              }}
-            >✕</button>
+            >
+              x
+            </button>
           </div>
         </div>
-        <div 
+
+        <div
           className="window-body"
           style={{
             flex: 1,
-            padding: theme.spacing.lg,
+            minHeight: 0,
             backgroundColor: theme.colors.windowBg,
-            overflow: 'auto',
             color: theme.colors.textPrimary,
-            // Fix content scaling for maximized windows
-            transform: maximized ? 'none' : 'none',
-            transformOrigin: 'top left'
+            overflow: 'auto'
           }}
         >
-          <style>{`
-            .window-body::-webkit-scrollbar {
-              width: 8px;
-            }
-            
-            .window-body::-webkit-scrollbar-track {
-              background: ${theme.colors.panel};
-              border-radius: 4px;
-            }
-            
-            .window-body::-webkit-scrollbar-thumb {
-              background: ${theme.colors.accentPrimary};
-              border-radius: 4px;
-              transition: background-color 0.2s;
-            }
-            
-            .window-body::-webkit-scrollbar-thumb:hover {
-              background: ${theme.colors.accentSecondary};
-              box-shadow: 0 0 10px ${theme.colors.accentSecondary}50;
-            }
-          `}</style>
           {children}
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default WindowFrame;
+export default WindowFrame

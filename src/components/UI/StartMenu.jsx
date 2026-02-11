@@ -1,117 +1,113 @@
-import React, { useState, useEffect } from 'react';
-import { comprehensiveSearch } from '../SearchEngine';
+﻿import { useMemo } from 'react'
+import { comprehensiveSearch } from '../SearchEngine'
+
+const PINNED_APPS = [
+  { name: 'Projects', icon: '/images/file-explorer.png', description: 'My portfolio projects' },
+  { name: 'Skills', icon: '/images/settings.png', description: 'Technical skills and expertise' },
+  { name: 'Contact', icon: '/images/note.png', description: 'Get in touch with me' },
+  { name: 'About', icon: '/images/logo.png', description: 'About me and my resume' },
+  { name: 'Terminal', icon: '/images/terminal.png', description: 'Command terminal' },
+  { name: 'Settings', icon: '/images/settings.png', description: 'System settings' }
+]
+
+const ALL_APPS = [
+  ...PINNED_APPS,
+  { name: 'Calculator', icon: '/images/calculator.apng', description: 'Calculator app' },
+  { name: 'Chrome', icon: '/images/chrome.png', description: 'Web browser' },
+  { name: 'File Explorer', icon: '/images/file-explorer.png', description: 'File manager' },
+  { name: 'Trash Bin', icon: '/images/bin.png', description: 'Deleted items' },
+  { name: 'Notes', icon: '/images/note.png', description: 'Note-taking app' },
+  { name: 'Resume', icon: '/images/note.png', description: 'Resume viewer' },
+  { name: 'ErrorLog', icon: '/images/settings.png', description: 'System diagnostics' }
+]
+
+const SORTED_APPS = [...ALL_APPS].sort((a, b) => a.name.localeCompare(b.name))
+
+function getAppIcon(appName) {
+  return ALL_APPS.find(app => app.name === appName)?.icon || '/images/logo.png'
+}
 
 const StartMenu = ({ isOpen, onClose, openWindow, searchTerm, setSearchTerm, addNotification }) => {
-  const [searchResults, setSearchResults] = useState([]);
-  const [filteredApps, setFilteredApps] = useState([]);
 
-  // Portfolio apps for pinned grid
-  const pinnedApps = [
-    { name: 'Projects', icon: './images/projects.png', description: 'My portfolio projects' },
-    { name: 'Skills', icon: './images/skills.png', description: 'Technical skills & expertise' },
-    { name: 'Contact', icon: './images/contact.png', description: 'Get in touch with me' },
-    { name: 'About', icon: './images/about.png', description: 'About me & my resume' },
-    { name: 'Terminal', icon: './images/terminal.png', description: 'Command terminal' },
-    { name: 'Settings', icon: './images/settings.png', description: 'System settings' }
-  ];
-
-  // All available apps
-  const allApps = [
-    ...pinnedApps,
-    { name: 'Calculator', icon: './images/calculator.apng', description: 'Calculator app' },
-    { name: 'Chrome', icon: './images/chrome.png', description: 'Web browser' },
-    { name: 'File Explorer', icon: './images/file-explorer.png', description: 'File manager' },
-    { name: 'Trash Bin', icon: './images/bin.png', description: 'Deleted items' },
-    { name: 'Notes', icon: './images/note.png', description: 'Note-taking app' }
-  ];
-
-  // Sort apps alphabetically
-  const sortedApps = [...allApps].sort((a, b) => a.name.localeCompare(b.name));
-
-  useEffect(() => {
-    if (searchTerm.trim()) {
-      const results = comprehensiveSearch(searchTerm);
-      setSearchResults(results);
-      
-      // Filter apps based on search
-      const filtered = allApps.filter(app =>
-        app.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        app.description.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredApps(filtered);
-    } else {
-      setSearchResults([]);
-      setFilteredApps(sortedApps);
+  const filteredApps = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return SORTED_APPS
     }
-  }, [searchTerm]);
+
+    const query = searchTerm.toLowerCase()
+    return SORTED_APPS.filter(app => (
+      app.name.toLowerCase().includes(query) || app.description.toLowerCase().includes(query)
+    ))
+  }, [searchTerm])
+  const searchResults = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return []
+    }
+
+    return comprehensiveSearch(searchTerm)
+  }, [searchTerm])
 
   const handleAppClick = (appName) => {
-    openWindow(appName);
-    onClose();
-  };
+    openWindow(appName)
+    onClose()
+  }
 
   const handleLock = () => {
-    addNotification('system', 'System locked', {
+    addNotification('system', 'Use Ctrl+L to lock the system', {
       title: 'Security',
-      duration: 3000
-    });
-    // This would trigger lock screen - to be implemented
-    onClose();
-  };
+      duration: 2500
+    })
+    onClose()
+  }
 
   const handleAbout = () => {
-    addNotification('system', 'Browser OS v1.0 - Portfolio Edition', {
+    addNotification('system', 'Browser OS - Stable build', {
       title: 'About',
-      duration: 5000
-    });
-    onClose();
-  };
+      duration: 3000
+    })
+    onClose()
+  }
 
   const handleReset = () => {
-    if (window.confirm('Reset session? This will close all windows and reset the desktop.')) {
-      addNotification('system', 'Session reset - Reloading...', {
+    if (window.confirm('Reset session? This will reload the desktop.')) {
+      addNotification('system', 'Reloading session...', {
         title: 'System',
-        duration: 3000
-      });
-      setTimeout(() => window.location.reload(), 1000);
+        duration: 2000
+      })
+      setTimeout(() => window.location.reload(), 900)
     }
-    onClose();
-  };
+    onClose()
+  }
 
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-  };
-
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return null
+  }
 
   return (
     <div className="start-menu">
-      {/* Profile Header */}
       <div className="profile-header">
         <div className="avatar">MH</div>
         <div className="user-info">
           <div className="name">Mohammed Hassoun</div>
-          <div className="title">Browser-Based OS Engineer</div>
+          <div className="title">Web OS Engineer</div>
         </div>
       </div>
 
-      {/* Search Section */}
       <div className="search-section">
         <input
           type="text"
           placeholder="Search apps, commands, keywords..."
           value={searchTerm}
-          onChange={handleSearchChange}
+          onChange={(event) => setSearchTerm(event.target.value)}
           autoFocus
         />
       </div>
 
-      {/* Search Results */}
       {searchResults.length > 0 && (
-        <div className="search-results">
-          {searchResults.map((result, index) => (
+        <div className="all-apps" style={{ maxHeight: '140px' }}>
+          {searchResults.slice(0, 5).map((result, index) => (
             <div
-              key={index}
+              key={`${result.app}-${index}`}
               className="all-app-item"
               onClick={() => handleAppClick(result.app)}
             >
@@ -127,11 +123,10 @@ const StartMenu = ({ isOpen, onClose, openWindow, searchTerm, setSearchTerm, add
         </div>
       )}
 
-      {/* Pinned Apps Grid */}
       {!searchTerm && (
         <div className="pinned-apps">
           <div className="pinned-apps-grid">
-            {pinnedApps.map((app) => (
+            {PINNED_APPS.map((app) => (
               <div
                 key={app.name}
                 className="pinned-app"
@@ -146,7 +141,6 @@ const StartMenu = ({ isOpen, onClose, openWindow, searchTerm, setSearchTerm, add
         </div>
       )}
 
-      {/* All Apps Section */}
       <div className="all-apps">
         {filteredApps.map((app) => (
           <div
@@ -161,38 +155,20 @@ const StartMenu = ({ isOpen, onClose, openWindow, searchTerm, setSearchTerm, add
         ))}
       </div>
 
-      {/* Power Section */}
       <div className="power-section">
         <button className="power-button" onClick={handleLock}>
-          🔒 Lock
+          Lock
         </button>
         <button className="power-button" onClick={handleAbout}>
-          ℹ️ About
+          About
         </button>
         <button className="power-button" onClick={handleReset}>
-          🔄 Reset
+          Reset
         </button>
       </div>
     </div>
-  );
-};
-
-// Helper function to get app icon
-function getAppIcon(appName) {
-  const iconMap = {
-    'Calculator': './images/calculator.apng',
-    'Terminal': './images/terminal.png',
-    'Chrome': './images/chrome.png',
-    'Settings': './images/settings.png',
-    'File Explorer': './images/file-explorer.png',
-    'Trash Bin': './images/bin.png',
-    'Notes': './images/note.png',
-    'Projects': './images/projects.png',
-    'Skills': './images/skills.png',
-    'Contact': './images/contact.png',
-    'About': './images/about.png'
-  };
-  return iconMap[appName] || './images/logo.png';
+  )
 }
 
-export default StartMenu;
+export default StartMenu
+

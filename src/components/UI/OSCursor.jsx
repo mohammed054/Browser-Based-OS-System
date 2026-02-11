@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './OSCursor.css';
 
 /**
@@ -21,19 +21,23 @@ const OSCursor = () => {
   const errorTimeoutRef = useRef(null);
 
   // Enhanced cursor state detection
-  const detectCursorState = (element) => {
+  const detectCursorState = useCallback((element) => {
     if (!element) return 'default';
     
     const computedStyle = window.getComputedStyle(element);
-    const cursor = computedStyle.cursor;
+    const cursor = computedStyle?.cursor || '';
     const tagName = element.tagName;
-    const className = element.className;
+    const className =
+      typeof element.className === 'string'
+        ? element.className
+        : element.className?.baseVal || '';
     
     // Window drag detection
-    if (className.includes('titlebar') || 
+    if (className.includes('window-titlebar') ||
+        className.includes('titlebar') || 
         className.includes('draggable') ||
         cursor.includes('move') ||
-        className.includes('window-frame')) {
+        cursor.includes('grab')) {
       return 'drag';
     }
     
@@ -53,31 +57,55 @@ const OSCursor = () => {
     }
     
     // Text input detection
-    if ((tagName === 'INPUT' && element.type === 'text') ||
-        tagName === 'INPUT' && element.type === 'password' ||
+    if (tagName === 'INPUT') {
+      const inputType = (element.type || 'text').toLowerCase();
+      const nonTextInputTypes = new Set([
+        'button', 'checkbox', 'radio', 'range', 'submit', 'reset', 'file', 'color'
+      ]);
+      if (!nonTextInputTypes.has(inputType)) {
+        return 'text';
+      }
+    }
+    if (
         tagName === 'TEXTAREA' ||
         className.includes('input') ||
         className.includes('text') ||
         className.includes('terminal-input') ||
-        cursor === 'text') {
+        cursor.includes('text')
+    ) {
       return 'text';
     }
     
     // Resize detection
     if (cursor.includes('resize') || className.includes('resize') || className.includes('resize-handle')) {
       let type = 'ns'; // default
-      if (cursor.includes('ew') || className.includes('horizontal')) type = 'ew';
-      else if (cursor.includes('nesw') || className.includes('diagonal-up')) type = 'nesw';
-      else if (cursor.includes('nwse') || className.includes('diagonal-down')) type = 'nwse';
+      if (
+        cursor.includes('ew') ||
+        className.includes('left') ||
+        className.includes('right') ||
+        className.includes('horizontal')
+      ) type = 'ew';
+      else if (
+        cursor.includes('nesw') ||
+        className.includes('top-right') ||
+        className.includes('bottom-left') ||
+        className.includes('diagonal-up')
+      ) type = 'nesw';
+      else if (
+        cursor.includes('nwse') ||
+        className.includes('top-left') ||
+        className.includes('bottom-right') ||
+        className.includes('diagonal-down')
+      ) type = 'nwse';
       setResizeType(type);
       return 'resize';
     }
     
     return 'default';
-  };
+  }, []);
 
   // Handle mouse movement with optimized performance
-  const handleMouseMove = (e) => {
+  const handleMouseMove = useCallback((e) => {
     // Cancel previous animation frame
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
@@ -92,31 +120,31 @@ const OSCursor = () => {
       const newState = detectCursorState(element);
       setCursorState(newState);
     });
-  };
+  }, [detectCursorState]);
 
-  const handleMouseEnter = () => {
+  const handleMouseEnter = useCallback(() => {
     // Clear any error state on re-enter
     if (errorTimeoutRef.current) {
       clearTimeout(errorTimeoutRef.current);
     }
     setIsError(false);
-  };
+  }, []);
 
-  const handleMouseLeave = () => {
+  const handleMouseLeave = useCallback(() => {
     // Hide cursor when mouse leaves viewport
     // Don't set to null, just opacity change
-  };
+  }, []);
 
-  const handleMouseDown = () => {
+  const handleMouseDown = useCallback(() => {
     // Optional: subtle press effect
-  };
+  }, []);
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     // Optional: release effect
-  };
+  }, []);
 
   // Trigger error state (for form validation errors)
-  const triggerError = () => {
+  const triggerError = useCallback(() => {
     setIsError(true);
     if (errorTimeoutRef.current) {
       clearTimeout(errorTimeoutRef.current);
@@ -124,7 +152,7 @@ const OSCursor = () => {
     errorTimeoutRef.current = setTimeout(() => {
       setIsError(false);
     }, 200); // Brief 200ms red flicker
-  };
+  }, []);
 
   // Setup event listeners
   useEffect(() => {
@@ -157,7 +185,7 @@ const OSCursor = () => {
         clearTimeout(errorTimeoutRef.current);
       }
     };
-  }, []);
+  }, [handleMouseDown, handleMouseEnter, handleMouseLeave, handleMouseMove, handleMouseUp, triggerError]);
 
   // Don't render on touch devices
   useEffect(() => {
