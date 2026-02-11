@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import './Terminal.css';
+import { PROFILE } from '../config/profile';
 
 const Terminal = () => {
   const [commandHistory, setCommandHistory] = useState([
@@ -78,9 +79,9 @@ Available commands:
         return;
 
       case 'whoami':
-        output = `Mohammed Hassoun
-Frontend Engineer / OS-style UI builder
-San Francisco, CA
+        output = `${PROFILE.name}
+${PROFILE.title}
+${PROFILE.location}
 
 Specializing in:
 ⚛️ React & Advanced Frontend
@@ -150,12 +151,12 @@ Specialized in:
         output = `📧 Contact Information
 
 Primary:
-  Email: mohammed.hassoun@example.com
-  Location: San Francisco, CA
+  Email: ${PROFILE.email}
+  Location: ${PROFILE.location}
 
 Professional:
-  LinkedIn: linkedin.com/in/mohammedhassoun
-  GitHub:   github.com/mhassoun
+  LinkedIn: ${PROFILE.linkedin}
+  GitHub:   ${PROFILE.github}
 
 Available for:
 ○ Full-time opportunities
@@ -205,7 +206,7 @@ Purpose:
 • Demonstrate system-level thinking
 • Provide an engaging user experience
 
-Built with ❤️ by Mohammed Hassoun
+Built with ❤️ by ${PROFILE.name}
 
 🐛 Hidden features: Try 'sudo rm -rf /' or 'hack nasa'`;
         break;
@@ -395,3 +396,4 @@ Type "help" to see available commands.`;
 };
 
 export default Terminal;
+

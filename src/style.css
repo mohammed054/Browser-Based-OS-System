@@ -66,11 +66,7 @@ body {
   overflow: hidden;
   font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   color: white;
-  background: url('/images/wallpaper.png') center/cover no-repeat;
-  /* Optimize background loading */
-  background-attachment: fixed;
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
+  background: #0B0F14;
   /* Override any conflicting styles */
   display: block !important;
   place-items: unset !important;
@@ -78,10 +74,7 @@ body {
 
 /* Desktop background - use wallpaper for desktop area */
 .desktop {
-  background: url('/images/wallpaper.png') center/cover no-repeat;
-  background-attachment: fixed;
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
+  background-color: #0B0F14;
 }
 
 /* Ensure root element doesn't interfere */
@@ -228,72 +221,6 @@ body.desktop-ready {
   background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(2px);
   z-index: var(--z-start-menu);
-}
-
-.start-menu {
-  position: absolute;
-  bottom: 48px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(420px, calc(100vw - 24px));
-  min-width: min(320px, calc(100vw - 24px));
-  background: rgba(0, 0, 0, 0.9);
-  backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  max-height: calc(100vh - 72px);
-  overflow-y: auto;
-  z-index: var(--z-start-menu);
-}
-
-.start-menu-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px 12px 0 0;
-}
-
-.start-menu-header img {
-  width: 32px;
-  height: 32px;
-}
-
-.start-menu-header span {
-  font-size: 18px;
-  font-weight: bold;
-  color: white;
-}
-
-.start-menu-apps {
-  padding: 8px;
-}
-
-.start-menu-app {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  color: white;
-}
-
-.start-menu-app:hover {
-  background: rgba(0, 120, 215, 0.2);
-}
-
-.start-menu-app img {
-  width: 24px;
-  height: 24px;
-}
-
-.start-menu-app span {
-  font-size: 14px;
 }
 
 /* Taskbar - Phase 3 Redesign */
@@ -555,6 +482,9 @@ body.desktop-ready {
   position: absolute;
   bottom: 60px;
   left: 12px;
+  right: auto;
+  transform: none;
+  min-width: min(320px, calc(100vw - 24px));
   width: min(420px, calc(100vw - 24px));
   max-height: calc(100vh - 72px);
   background: var(--os-primary);

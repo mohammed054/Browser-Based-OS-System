@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { PROFILE } from '../config/profile';
 
 /**
  * Mobile Fallback Component
@@ -76,7 +77,7 @@ const MobileFallback = ({ onContinue, onSimplified }) => {
         WebkitTextFillColor: 'transparent',
         backgroundClip: 'text'
       }}>
-        MohammedOS
+        {PROFILE.firstName}OS
       </h1>
 
       <p style={{
@@ -148,12 +149,12 @@ const MobileFallback = ({ onContinue, onSimplified }) => {
             boxShadow: '0 4px 15px rgba(56, 189, 248, 0.3)'
           }}
           onMouseEnter={(e) => {
-            e.target.style.transform = 'translateY(-2px)';
-            e.target.style.boxShadow = '0 6px 20px rgba(56, 189, 248, 0.4)';
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 6px 20px rgba(56, 189, 248, 0.4)';
           }}
           onMouseLeave={(e) => {
-            e.target.style.transform = 'translateY(0)';
-            e.target.style.boxShadow = '0 4px 15px rgba(56, 189, 248, 0.3)';
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 15px rgba(56, 189, 248, 0.3)';
           }}
         >
           Try Anyway 🚀
@@ -172,12 +173,12 @@ const MobileFallback = ({ onContinue, onSimplified }) => {
             transition: 'all 0.2s'
           }}
           onMouseEnter={(e) => {
-            e.target.style.background = 'rgba(255, 255, 255, 0.1)';
-            e.target.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)';
           }}
           onMouseLeave={(e) => {
-            e.target.style.background = 'transparent';
-            e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
           }}
         >
           View Simplified Portfolio 📄
@@ -239,7 +240,7 @@ const SimplifiedPortfolio = ({ onClose }) => {
           WebkitTextFillColor: 'transparent',
           backgroundClip: 'text'
         }}>
-          Mohammed Hassoun
+          {PROFILE.name}
         </h1>
         <button
           onClick={onClose}
@@ -363,9 +364,9 @@ const SimplifiedPortfolio = ({ onClose }) => {
         </h2>
         <div style={{ display: 'grid', gap: '10px' }}>
           {[
-            { icon: '📧', label: 'Email', value: 'mohammed.hassoun@example.com' },
-            { icon: '💼', label: 'LinkedIn', value: 'linkedin.com/in/mohammedhassoun' },
-            { icon: '🐙', label: 'GitHub', value: 'github.com/mhassoun' }
+            { icon: '📧', label: 'Email', value: PROFILE.email },
+            { icon: '💼', label: 'LinkedIn', value: PROFILE.linkedin },
+            { icon: '🐙', label: 'GitHub', value: PROFILE.github }
           ].map((contact, index) => (
             <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span>{contact.icon}</span>
@@ -402,3 +403,4 @@ const SimplifiedPortfolio = ({ onClose }) => {
 };
 
 export { MobileFallback, SimplifiedPortfolio };
+

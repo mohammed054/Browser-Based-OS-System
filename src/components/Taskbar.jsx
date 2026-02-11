@@ -1,21 +1,22 @@
-﻿import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import StartMenu from './UI/StartMenu'
 import SystemTray from './UI/SystemTray'
+import { getAssetPath } from '../utils/assets'
 
 const APP_ICON_MAP = {
-  Calculator: '/images/calculator.apng',
-  Terminal: '/images/terminal.png',
-  Chrome: '/images/chrome.png',
-  Settings: '/images/settings.png',
-  'File Explorer': '/images/file-explorer.png',
-  'Trash Bin': '/images/bin.png',
-  Notes: '/images/note.png',
-  Projects: '/images/file-explorer.png',
-  Skills: '/images/settings.png',
-  Contact: '/images/note.png',
-  About: '/images/logo.png',
-  Resume: '/images/note.png',
-  ErrorLog: '/images/settings.png'
+  Calculator: getAssetPath('images/calculator.apng'),
+  Terminal: getAssetPath('images/terminal.png'),
+  Chrome: getAssetPath('images/chrome.png'),
+  Settings: getAssetPath('images/settings.png'),
+  'File Explorer': getAssetPath('images/file-explorer.png'),
+  'Trash Bin': getAssetPath('images/bin.png'),
+  Notes: getAssetPath('images/note.png'),
+  Projects: getAssetPath('images/file-explorer.png'),
+  Skills: getAssetPath('images/settings.png'),
+  Contact: getAssetPath('images/note.png'),
+  About: getAssetPath('images/logo.png'),
+  Resume: getAssetPath('images/note.png'),
+  ErrorLog: getAssetPath('images/settings.png')
 }
 
 const Taskbar = ({ openWindow, windows, activeWindowId, onWindowAction, addNotification }) => {
@@ -29,7 +30,7 @@ const Taskbar = ({ openWindow, windows, activeWindowId, onWindowAction, addNotif
   const runningApps = useMemo(() => windows.map(windowState => ({
     id: windowState.id,
     name: windowState.title,
-    icon: APP_ICON_MAP[windowState.appType || windowState.title] || '/images/logo.png',
+    icon: APP_ICON_MAP[windowState.appType || windowState.title] || getAssetPath('images/logo.png'),
     isActive: windowState.id === activeWindowId && !windowState.minimized
   })), [windows, activeWindowId])
 
@@ -188,7 +189,7 @@ const Taskbar = ({ openWindow, windows, activeWindowId, onWindowAction, addNotif
             }}
             aria-label="Open start menu"
           >
-            <img src="/images/logo.png" alt="OS" />
+            <img src={getAssetPath('images/logo.png')} alt="OS" />
           </button>
         </div>
 
@@ -246,7 +247,7 @@ const Taskbar = ({ openWindow, windows, activeWindowId, onWindowAction, addNotif
                 transition: 'all 0.2s'
               }}
             >
-              🔊
+              ??
             </span>
             <input
               type="range"

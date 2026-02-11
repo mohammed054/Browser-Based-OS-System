@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import OSPopup from './OSPopup';
 import './LoginScreen.css';
+import { PROFILE } from '../../config/profile';
 
 const LoginScreen = ({ onLogin, currentTime, currentDate }) => {
   const [showForm, setShowForm] = useState(false);
@@ -57,7 +58,6 @@ const LoginScreen = ({ onLogin, currentTime, currentDate }) => {
 
   // Force state update in separate tick to bypass any React batching
   const handleClick = (e) => {
-    console.log('🔍 LOGIN SCREEN CLICKED', password);
     e.stopPropagation();
     
     // Force state update in separate tick to bypass any React batching
@@ -98,7 +98,7 @@ const LoginScreen = ({ onLogin, currentTime, currentDate }) => {
     const authDelay = 800 + Math.random() * 400;
     await new Promise(resolve => setTimeout(resolve, authDelay));
     
-    if (password === 'mohammed' || password === 'portfolio' || password === 'admin' || password === 'guest' || password === 'user' || password === 'demo') {
+    if (password === 'mohammd' || password === 'mohammed' || password === 'portfolio' || password === 'admin' || password === 'guest' || password === 'user' || password === 'demo') {
       // Play success sound
       if (typeof window !== 'undefined' && window.soundManager) {
         window.soundManager.play('windowOpen');
@@ -178,8 +178,8 @@ const LoginScreen = ({ onLogin, currentTime, currentDate }) => {
       {showForm && (
         <div className="login-form" onClick={handleFormClick} onKeyPress={handleFormKeyPress}>
           <div className="login-header">
-            <div className="login-avatar">MH</div>
-            <div className="login-title">mohammed</div>
+            <div className="login-avatar">{PROFILE.initials}</div>
+            <div className="login-title">{PROFILE.firstName.toLowerCase()}</div>
             <div className="login-subtitle">BrowserOS Portfolio</div>
           </div>
         
@@ -219,7 +219,7 @@ const LoginScreen = ({ onLogin, currentTime, currentDate }) => {
               {error && (
                 <div className="login-error">
                   {error}
-                  <div className="login-error-tip">💡 Try: mohammed, portfolio, admin, guest, user, or demo</div>
+                  <div className="login-error-tip">Try: mohammd, mohammed, portfolio, admin, guest, user, or demo</div>
                 </div>
               )}
               {isSubmitting && (
@@ -268,3 +268,4 @@ const LoginScreen = ({ onLogin, currentTime, currentDate }) => {
 };
 
 export default LoginScreen;
+

@@ -1,10 +1,11 @@
 import React from 'react';
+import { PROFILE } from '../config/profile';
 
 const About = () => {
   const personalInfo = {
-    name: 'Mohammed Hassoun',
-    title: 'Frontend Engineer / OS-style UI builder',
-    location: 'San Francisco, CA',
+    name: PROFILE.name,
+    title: PROFILE.title,
+    location: PROFILE.location,
     experience: '5+ years',
     education: 'B.S. Computer Science',
     bio: 'Passionate frontend engineer specializing in creating immersive browser-based experiences and innovative user interfaces.',
@@ -17,15 +18,12 @@ const About = () => {
     switch (action) {
       case 'projects':
         // Will trigger opening Projects app
-        console.log('Opening Projects...');
         break;
       case 'terminal':
         // Will trigger opening Terminal app
-        console.log('Opening Terminal...');
         break;
       case 'contact':
         // Will trigger opening Contact app
-        console.log('Opening Contact...');
         break;
       default:
         break;
@@ -160,14 +158,14 @@ const About = () => {
               textAlign: 'center'
             }}
             onMouseEnter={(e) => {
-              e.target.style.background = 'rgba(56, 189, 248, 0.3)';
-              e.target.style.borderColor = '#38bdf8';
-              e.target.style.transform = 'translateX(2px)';
+              e.currentTarget.style.background = 'rgba(56, 189, 248, 0.3)';
+              e.currentTarget.style.borderColor = '#38bdf8';
+              e.currentTarget.style.transform = 'translateX(2px)';
             }}
             onMouseLeave={(e) => {
-              e.target.style.background = 'rgba(56, 189, 248, 0.2)';
-              e.target.style.borderColor = 'rgba(56, 189, 248, 0.4)';
-              e.target.style.transform = 'translateX(0)';
+              e.currentTarget.style.background = 'rgba(56, 189, 248, 0.2)';
+              e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.4)';
+              e.currentTarget.style.transform = 'translateX(0)';
             }}
           >
             🚀 View Projects
@@ -187,14 +185,14 @@ const About = () => {
               textAlign: 'center'
             }}
             onMouseEnter={(e) => {
-              e.target.style.background = 'rgba(168, 85, 247, 0.3)';
-              e.target.style.borderColor = '#a855f7';
-              e.target.style.transform = 'translateX(2px)';
+              e.currentTarget.style.background = 'rgba(168, 85, 247, 0.3)';
+              e.currentTarget.style.borderColor = '#a855f7';
+              e.currentTarget.style.transform = 'translateX(2px)';
             }}
             onMouseLeave={(e) => {
-              e.target.style.background = 'rgba(168, 85, 247, 0.2)';
-              e.target.style.borderColor = 'rgba(168, 85, 247, 0.4)';
-              e.target.style.transform = 'translateX(0)';
+              e.currentTarget.style.background = 'rgba(168, 85, 247, 0.2)';
+              e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.4)';
+              e.currentTarget.style.transform = 'translateX(0)';
             }}
           >
             💻 Open Terminal
@@ -214,14 +212,14 @@ const About = () => {
               textAlign: 'center'
             }}
             onMouseEnter={(e) => {
-              e.target.style.background = 'rgba(34, 197, 94, 0.3)';
-              e.target.style.borderColor = '#22c55e';
-              e.target.style.transform = 'translateX(2px)';
+              e.currentTarget.style.background = 'rgba(34, 197, 94, 0.3)';
+              e.currentTarget.style.borderColor = '#22c55e';
+              e.currentTarget.style.transform = 'translateX(2px)';
             }}
             onMouseLeave={(e) => {
-              e.target.style.background = 'rgba(34, 197, 94, 0.2)';
-              e.target.style.borderColor = 'rgba(34, 197, 94, 0.4)';
-              e.target.style.transform = 'translateX(0)';
+              e.currentTarget.style.background = 'rgba(34, 197, 94, 0.2)';
+              e.currentTarget.style.borderColor = 'rgba(34, 197, 94, 0.4)';
+              e.currentTarget.style.transform = 'translateX(0)';
             }}
           >
             ✉️ Contact Me
@@ -251,3 +249,5 @@ const About = () => {
 };
 
 export default About;
+
+

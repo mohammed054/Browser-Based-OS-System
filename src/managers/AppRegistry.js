@@ -1,4 +1,5 @@
 import { lazy } from 'react'
+import { getAssetPath } from '../utils/assets'
 
 // Lazy load components for better performance
 const Calculator = lazy(() => import('../components/Calculator'))
@@ -17,49 +18,49 @@ class AppRegistry {
         title: 'Calculator',
         allowMultiple: false,
         specialSizing: true, // portrait mode
-        icon: './images/calculator.apng'
+        icon: getAssetPath('images/calculator.apng')
       }],
       ['Terminal', {
         component: Terminal,
         title: 'Terminal',
         allowMultiple: false,
         specialSizing: false,
-        icon: './images/terminal.png'
+        icon: getAssetPath('images/terminal.png')
       }],
       ['Chrome', {
         component: Chrome,
         title: 'Chrome',
         allowMultiple: false,
         specialSizing: false,
-        icon: './images/chrome.png'
+        icon: getAssetPath('images/chrome.png')
       }],
       ['Settings', {
         component: Settings,
         title: 'Settings',
         allowMultiple: false,
         specialSizing: false,
-        icon: './images/settings.png'
+        icon: getAssetPath('images/settings.png')
       }],
       ['File Explorer', {
         component: FileExplorer,
         title: 'File Explorer',
         allowMultiple: false,
         specialSizing: false,
-        icon: './images/file-explorer.png'
+        icon: getAssetPath('images/file-explorer.png')
       }],
       ['Trash Bin', {
         component: TrashBin,
         title: 'Trash Bin',
         allowMultiple: false,
         specialSizing: false,
-        icon: './images/bin.png'
+        icon: getAssetPath('images/bin.png')
       }],
       ['Notes', {
         component: Notes,
         title: 'Notes',
         allowMultiple: true,
         specialSizing: false,
-        icon: './images/note.png'
+        icon: getAssetPath('images/note.png')
       }]
     ])
   }

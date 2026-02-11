@@ -1,10 +1,12 @@
-﻿import { useState, useRef, useCallback, useMemo } from 'react'
+import { useState, useRef, useCallback, useMemo } from 'react'
 import { theme } from '../../theme'
 import DesktopIcon from './DesktopIcon'
 import WindowFrame from './WindowFrame'
+import { getAssetPath } from '../../utils/assets'
 
 const MENU_ITEMS = [
   { id: 'new-text', label: 'New Text Document' },
+  { id: 'new-folder', label: 'New Folder' },
   { id: 'refresh', label: 'Refresh' },
   { id: 'personalize', label: 'Personalize' },
   { id: 'display-settings', label: 'Display Settings' }
@@ -14,6 +16,7 @@ const Desktop = ({
   openWindow,
   icons,
   onDeleteIcon,
+  onCreateDesktopItem,
   onUpdateIconPosition,
   windows,
   closeWindow,
@@ -35,6 +38,21 @@ const Desktop = ({
   const isIconSelected = useCallback((iconId) => selectedIcons.has(iconId), [selectedIcons])
 
   const handleIconOpen = useCallback((icon) => {
+    if (icon.appType) {
+      openWindow(icon.appType)
+      return
+    }
+
+    if (icon.type === 'folder') {
+      openWindow('File Explorer')
+      return
+    }
+
+    if (icon.type === 'text') {
+      openWindow('Notes')
+      return
+    }
+
     openWindow(icon.label)
   }, [openWindow])
 
@@ -123,7 +141,7 @@ const Desktop = ({
     }
 
     const menuWidth = 240
-    const menuHeight = 220
+    const menuHeight = MENU_ITEMS.length * 40 + 20
     const padding = 8
 
     const maxX = Math.max(padding, rect.width - menuWidth - padding)
@@ -138,7 +156,10 @@ const Desktop = ({
   const handleContextAction = useCallback((action) => {
     switch (action) {
       case 'new-text':
-        openWindow('Notes')
+        onCreateDesktopItem?.('text')
+        break
+      case 'new-folder':
+        onCreateDesktopItem?.('folder')
         break
       case 'refresh':
         window.location.reload()
@@ -157,7 +178,7 @@ const Desktop = ({
     }
 
     setContextMenu(null)
-  }, [openWindow, addNotification])
+  }, [openWindow, addNotification, onCreateDesktopItem])
 
   const windowElements = useMemo(() => windows.map(windowState => (
     <WindowFrame
@@ -172,6 +193,7 @@ const Desktop = ({
       minimized={windowState.minimized}
       isActive={activeWindowId === windowState.id}
       isCalculator={windowState.isCalculator}
+      adaptiveScale={windowState.adaptiveScale}
       onClose={() => closeWindow(windowState.id)}
       onFocus={() => focusWindow(windowState.id)}
       onPositionChange={updateWindowPosition}
@@ -182,6 +204,8 @@ const Desktop = ({
       {windowState.children}
     </WindowFrame>
   )), [windows, activeWindowId, closeWindow, focusWindow, updateWindowPosition, updateWindowSize, toggleMaximizeWindow, minimizeWindow])
+
+  const wallpaperUrl = `url("${getAssetPath('images/wallpaper.png')}")`
 
   return (
     <div
@@ -197,7 +221,10 @@ const Desktop = ({
         width: '100vw',
         height: 'calc(100vh - 48px)',
         backgroundColor: theme.colors.background,
-        background: 'url("/images/wallpaper.png") center/cover no-repeat',
+        backgroundImage: `var(--os-wallpaper, ${wallpaperUrl})`,
+        backgroundPosition: 'center',
+        backgroundSize: 'cover',
+        backgroundRepeat: 'no-repeat',
         overflow: 'hidden',
         zIndex: isFullscreen ? -1 : 0
       }}

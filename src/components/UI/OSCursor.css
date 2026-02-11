@@ -1,9 +1,4 @@
-/**
- * OS Cursor Styles
- * Professional OS-style cursor with sharp arrow and context-aware states
- */
-
-/* Hide default cursor for OS cursor */
+/* OS Cursor Styles */
 body {
   cursor: none !important;
 }
@@ -12,22 +7,17 @@ body * {
   cursor: none !important;
 }
 
-/* On touch devices, show default cursor */
 @media (pointer: coarse) {
-  body {
-    cursor: auto !important;
-  }
-
+  body,
   body * {
     cursor: auto !important;
   }
-  
+
   .os-cursor {
     display: none !important;
   }
 }
 
-/* Base OS cursor */
 .os-cursor {
   position: fixed;
   width: 24px;
@@ -35,295 +25,88 @@ body * {
   pointer-events: none;
   z-index: 999999;
   transform: translate(-50%, -50%);
-  transition: transform 50ms ease-out;
+  transition: transform 60ms ease-out, filter 60ms ease-out;
 }
 
-/* SVG cursor elements */
-.os-cursor .cursor-svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-  transition: all 50ms ease-out;
+.os-cursor .cursor-svg,
+.os-cursor .cursor-shadow,
+.os-cursor .cursor-main {
+  transition: transform 60ms ease-out, fill 60ms ease-out, filter 60ms ease-out;
 }
 
-.cursor-shadow {
-  transition: all 50ms ease-out;
-}
-
-.cursor-main {
-  transition: all 50ms ease-out;
-}
-
-/* Default cursor - sharp arrow */
 .cursor-default {
-  width: 24px;
-  height: 24px;
+  transform: translate(-50%, -50%);
 }
 
-.cursor-default .cursor-shadow {
-  fill: #0B0F14;
-  transform: translate(1,1);
-}
-
-.cursor-default .cursor-main {
-  fill: #E5E7EB; /* Soft white */
-}
-
-.cursor-default::before {
-  border-bottom-color: #E5E7EB; /* Soft white */
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
-}
-
-/* Pointer cursor - arrow with cyan glow */
 .cursor-pointer {
-  width: 24px;
-  height: 24px;
-  transform: translate(-50%, -50%) scale(1.1);
+  transform: translate(-50%, -50%) scale(1.08);
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.4));
 }
 
-.cursor-pointer .cursor-shadow {
-  fill: #0B0F14;
-  transform: translate(1,1);
-  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6)); /* Cyan glow */
-}
-
-.cursor-pointer .cursor-main {
-  fill: #E5E7EB;
-  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6)); /* Cyan glow */
-}
-
-/* Text cursor - I-beam */
 .cursor-text {
-  width: 24px;
-  height: 24px;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(0.96);
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.35));
 }
 
-.text-cursor {
-  width: 2px;
-  height: 16px;
-  background: #E5E7EB;
-  margin: 4px 11px;
-  position: relative;
-  filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.3));
-  animation: text-blink 2s infinite;
-}
-
-/* Text cursor blink animation */
-@keyframes text-blink {
-  0%, 49% { opacity: 1; }
-  50%, 100% { opacity: 0.3; }
-}
-
-/* Drag cursor - simple cross with cyan glow */
 .cursor-drag {
-  width: 18px;
-  height: 18px;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(1.02);
 }
 
-.cursor-drag::before,
-.cursor-drag::after {
-  content: '';
-  position: absolute;
-  background: #E5E7EB;
-  filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.4));
-}
-
-.cursor-drag::before {
-  /* Vertical line */
-  width: 2px;
-  height: 18px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.cursor-drag::after {
-  /* Horizontal line */
-  width: 18px;
-  height: 2px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-/* Resize cursors */
 .cursor-resize {
-  width: 20px;
-  height: 20px;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(0.96);
 }
 
-.cursor-resize::before {
-  content: '';
-  position: absolute;
-  width: 0;
-  height: 0;
-  border: 1px solid #E5E7EB;
-  filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.3));
-}
-
-/* NS resize - double vertical arrow */
-.cursor-resize-ns::before {
-  border-left: 3px solid transparent;
-  border-right: 3px solid transparent;
-  border-bottom: 6px solid #E5E7EB;
-  border-top: 6px solid #E5E7EB;
-  top: 4px;
-  left: 7px;
-}
-
-/* EW resize - double horizontal arrow */
-.cursor-resize-ew::before {
-  border-left: 6px solid #E5E7EB;
-  border-right: 6px solid #E5E7EB;
-  border-top: 3px solid transparent;
-  border-bottom: 3px solid transparent;
-  top: 7px;
-  left: 4px;
-}
-
-/* NESW resize - diagonal arrows */
-.cursor-resize-nesw::before {
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
-  border-bottom: 5px solid #E5E7EB;
-  border-top: 5px solid #E5E7EB;
-  transform: rotate(45deg);
-  top: 5px;
-  left: 5px;
-}
-
-/* NWSE resize - opposite diagonal */
-.cursor-resize-nwse::before {
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
-  border-bottom: 5px solid #E5E7EB;
-  border-top: 5px solid #E5E7EB;
-  transform: rotate(-45deg);
-  top: 5px;
-  left: 5px;
-}
-
-/* Error state - brief red flicker */
 .cursor-error {
   animation: error-flicker 200ms ease-out;
 }
 
-.cursor-error .cursor-svg,
-.cursor-error .text-cursor {
-  filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.6));
-}
-
-.cursor-error .cursor-main,
-.cursor-error .text-cursor {
-  fill: #EF4444; /* Red */
+.cursor-error .cursor-main {
+  fill: #ef4444;
 }
 
 @keyframes error-flicker {
-  0%, 100% {
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+  0%,
+  100% {
+    filter: none;
   }
   50% {
-    filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.6));
+    filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.7));
   }
 }
 
-/* Loading state - subtle pulse on default arrow */
 .cursor-loading {
   animation: loading-pulse 1.5s ease-in-out infinite;
 }
 
-.cursor-loading .cursor-svg {
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
-}
-
 @keyframes loading-pulse {
-  0%, 100% {
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+  0%,
+  100% {
+    filter: none;
   }
   50% {
-    filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6)); /* Cyan pulse */
+    filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.5));
   }
 }
 
-/* Performance optimizations */
-
-/* Reduce motion for users who prefer it */
 @media (prefers-reduced-motion: reduce) {
-  .os-cursor {
-    transition: none;
-  }
-  
-  .cursor-text::before {
-    animation: none;
-  }
-  
-  .cursor-error {
-    animation: none;
-  }
-  
+  .os-cursor,
+  .os-cursor .cursor-svg,
+  .os-cursor .cursor-shadow,
+  .os-cursor .cursor-main,
+  .cursor-error,
   .cursor-loading {
+    transition: none;
     animation: none;
   }
 }
 
-/* Keep native cursor hidden on interactive elements to avoid double cursors */
-.os-logo-button,
-.tray-icon,
-.running-app,
-.context-menu-item,
-.start-menu-app,
-.notification-close,
-.icon,
-.desktop-icon,
-.window-frame .titlebar {
-  cursor: none !important;
-}
-
-/* Keep native text caret cursor hidden (custom cursor handles text state) */
-input[type="text"],
-input[type="password"],
-input[type="email"],
-textarea,
-.terminal-input {
-  cursor: none !important;
-}
-
-/* Keep native drag/resize cursors hidden */
-.desktop-icon,
-.window-frame .titlebar {
-  cursor: none !important;
-}
-
-.window-frame .resize-handle {
-  cursor: none !important;
-}
-
-/* Keep native pointer cursor hidden on all clickable controls */
-button,
-a,
-.clickable,
-.button,
-.os-logo-button,
-.tray-icon,
-.running-app,
-.context-menu-item,
-.start-menu-app,
-.notification-close {
-  cursor: none !important;
-}
-
-/* Ensure z-index hierarchy */
-.os-cursor {
-  z-index: 999999;
-}
-
-/* Prevent text selection cursor issues */
+.os-cursor,
 .os-cursor * {
   pointer-events: none;
 }
 
-/* Fix cursor visibility over iframes and video */
-iframe, video, canvas {
+iframe,
+video,
+canvas {
   cursor: none !important;
 }

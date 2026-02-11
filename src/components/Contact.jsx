@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { PROFILE } from '../config/profile';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -11,11 +12,11 @@ const Contact = () => {
   const [submitStatus, setSubmitStatus] = useState('');
 
   const contactInfo = {
-    email: 'mohammed.hassoun@example.com',
-    phone: '+1 (555) 123-4567',
-    location: 'San Francisco, CA',
-    linkedin: 'linkedin.com/in/mohammedhassoun',
-    github: 'github.com/mhassoun'
+    email: PROFILE.email,
+    phone: PROFILE.phone,
+    location: PROFILE.location,
+    linkedin: PROFILE.linkedin,
+    github: PROFILE.github
   };
 
   const handleInputChange = (e) => {
@@ -85,10 +86,10 @@ const Contact = () => {
               transition: 'all 0.3s ease'
             }}
             onMouseEnter={(e) => {
-              e.target.style.background = 'rgba(56, 189, 248, 0.1)';
+              e.currentTarget.style.background = 'rgba(56, 189, 248, 0.1)';
             }}
             onMouseLeave={(e) => {
-              e.target.style.background = 'rgba(255, 255, 255, 0.05)';
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
             }}>
               <span style={{ fontSize: '20px' }}>📧</span>
               <div>
@@ -108,10 +109,10 @@ const Contact = () => {
               transition: 'all 0.3s ease'
             }}
             onMouseEnter={(e) => {
-              e.target.style.background = 'rgba(56, 189, 248, 0.1)';
+              e.currentTarget.style.background = 'rgba(56, 189, 248, 0.1)';
             }}
             onMouseLeave={(e) => {
-              e.target.style.background = 'rgba(255, 255, 255, 0.05)';
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
             }}>
               <span style={{ fontSize: '20px' }}>📱</span>
               <div>
@@ -131,10 +132,10 @@ const Contact = () => {
               transition: 'all 0.3s ease'
             }}
             onMouseEnter={(e) => {
-              e.target.style.background = 'rgba(56, 189, 248, 0.1)';
+              e.currentTarget.style.background = 'rgba(56, 189, 248, 0.1)';
             }}
             onMouseLeave={(e) => {
-              e.target.style.background = 'rgba(255, 255, 255, 0.05)';
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
             }}>
               <span style={{ fontSize: '20px' }}>📍</span>
               <div>
@@ -173,12 +174,12 @@ const Contact = () => {
                     transition: 'all 0.3s ease'
                   }}
                   onMouseEnter={(e) => {
-                    e.target.style.background = 'rgba(56, 189, 248, 0.3)';
-                    e.target.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.background = 'rgba(56, 189, 248, 0.3)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
                   }}
                   onMouseLeave={(e) => {
-                    e.target.style.background = 'rgba(56, 189, 248, 0.2)';
-                    e.target.style.transform = 'translateY(0)';
+                    e.currentTarget.style.background = 'rgba(56, 189, 248, 0.2)';
+                    e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
                   <span>{social.icon}</span>
@@ -222,12 +223,12 @@ const Contact = () => {
                   transition: 'all 0.3s ease'
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = '#38bdf8';
-                  e.target.style.background = 'rgba(255, 255, 255, 0.1)';
+                  e.currentTarget.style.borderColor = '#38bdf8';
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = 'rgba(56, 189, 248, 0.3)';
-                  e.target.style.background = 'rgba(255, 255, 255, 0.05)';
+                  e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.3)';
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
                 }}
               />
             </div>
@@ -258,12 +259,12 @@ const Contact = () => {
                   transition: 'all 0.3s ease'
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = '#38bdf8';
-                  e.target.style.background = 'rgba(255, 255, 255, 0.1)';
+                  e.currentTarget.style.borderColor = '#38bdf8';
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = 'rgba(56, 189, 248, 0.3)';
-                  e.target.style.background = 'rgba(255, 255, 255, 0.05)';
+                  e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.3)';
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
                 }}
               />
             </div>
@@ -293,12 +294,12 @@ const Contact = () => {
                   transition: 'all 0.3s ease'
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = '#38bdf8';
-                  e.target.style.background = 'rgba(255, 255, 255, 0.1)';
+                  e.currentTarget.style.borderColor = '#38bdf8';
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = 'rgba(56, 189, 248, 0.3)';
-                  e.target.style.background = 'rgba(255, 255, 255, 0.05)';
+                  e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.3)';
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
                 }}
               />
             </div>
@@ -331,12 +332,12 @@ const Contact = () => {
                   transition: 'all 0.3s ease'
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = '#38bdf8';
-                  e.target.style.background = 'rgba(255, 255, 255, 0.1)';
+                  e.currentTarget.style.borderColor = '#38bdf8';
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = 'rgba(56, 189, 248, 0.3)';
-                  e.target.style.background = 'rgba(255, 255, 255, 0.05)';
+                  e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.3)';
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
                 }}
               />
             </div>
@@ -360,14 +361,14 @@ const Contact = () => {
               }}
               onMouseEnter={(e) => {
                 if (isFormValid && !isSubmitting) {
-                  e.target.style.background = '#0ea5e9';
-                  e.target.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.background = '#0ea5e9';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
                 }
               }}
               onMouseLeave={(e) => {
                 if (isFormValid && !isSubmitting) {
-                  e.target.style.background = '#38bdf8';
-                  e.target.style.transform = 'translateY(0)';
+                  e.currentTarget.style.background = '#38bdf8';
+                  e.currentTarget.style.transform = 'translateY(0)';
                 }
               }}
             >
@@ -395,3 +396,4 @@ const Contact = () => {
 };
 
 export default Contact;
+

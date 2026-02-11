@@ -123,24 +123,10 @@ const Projects = () => {
   };
 
   const handleProjectAction = (project, action) => {
-    switch (action) {
-      case 'open':
-        if (project.openAction === 'current') {
-          alert('You are currently viewing this project!');
-        } else {
-          console.log(`Opening ${project.title}...`);
-        }
-        break;
-      case 'github':
-        console.log(`Opening GitHub for ${project.title}...`);
-        break;
-      case 'live':
-        console.log(`Opening live demo for ${project.title}...`);
-        break;
-      default:
-        break;
+    if (action === 'open' && project.openAction === 'current') {
+      alert('You are currently viewing this project!')
     }
-  };
+  }
 
   const selectedProjectData = projects.find(p => p.id === selectedProject);
 
@@ -369,10 +355,10 @@ const Projects = () => {
                   transition: 'all 0.2s ease'
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.background = 'rgba(56, 189, 248, 0.3)';
+                  e.currentTarget.style.background = 'rgba(56, 189, 248, 0.3)';
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.background = 'rgba(56, 189, 248, 0.2)';
+                  e.currentTarget.style.background = 'rgba(56, 189, 248, 0.2)';
                 }}
               >
                 🚀 Open
@@ -392,10 +378,10 @@ const Projects = () => {
                   transition: 'all 0.2s ease'
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.background = 'rgba(168, 85, 247, 0.3)';
+                  e.currentTarget.style.background = 'rgba(168, 85, 247, 0.3)';
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.background = 'rgba(168, 85, 247, 0.2)';
+                  e.currentTarget.style.background = 'rgba(168, 85, 247, 0.2)';
                 }}
               >
                 📁 Source
@@ -415,10 +401,10 @@ const Projects = () => {
                   transition: 'all 0.2s ease'
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.background = 'rgba(34, 197, 94, 0.3)';
+                  e.currentTarget.style.background = 'rgba(34, 197, 94, 0.3)';
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.background = 'rgba(34, 197, 94, 0.2)';
+                  e.currentTarget.style.background = 'rgba(34, 197, 94, 0.2)';
                 }}
               >
                 🌐 Live Demo
@@ -451,3 +437,5 @@ const Projects = () => {
 };
 
 export default Projects;
+
+

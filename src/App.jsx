@@ -12,6 +12,7 @@ import { keyboardManager } from './utils/KeyboardManager'
 import OSCursor from './components/UI/OSCursor'
 import { soundManager } from './utils/SoundManager'
 import { MobileFallback, SimplifiedPortfolio } from './components/MobileFallback'
+import { getAssetPath } from './utils/assets'
 
 const Calculator = lazy(() => import('./components/Calculator'))
 const Terminal = lazy(() => import('./components/Terminal'))
@@ -33,19 +34,19 @@ const ICON_ROW_HEIGHT = 85
 const ICON_MARGIN = 20
 
 const APP_DEFINITIONS = {
-  Calculator: { component: Calculator, icon: '/images/calculator.apng', allowMultiple: false, sizeMode: 'calculator' },
-  Terminal: { component: Terminal, icon: '/images/terminal.png', allowMultiple: false },
-  Chrome: { component: Chrome, icon: '/images/chrome.png', allowMultiple: false },
-  Settings: { component: Settings, icon: '/images/settings.png', allowMultiple: false },
-  'File Explorer': { component: FileExplorer, icon: '/images/file-explorer.png', allowMultiple: false },
-  'Trash Bin': { component: TrashBin, icon: '/images/bin.png', allowMultiple: false },
-  Notes: { component: Notes, icon: '/images/note.png', allowMultiple: true },
-  Projects: { component: Projects, icon: '/images/file-explorer.png', allowMultiple: false, sizeMode: 'portfolio' },
-  Skills: { component: Skills, icon: '/images/settings.png', allowMultiple: false, sizeMode: 'portfolio' },
-  Contact: { component: Contact, icon: '/images/note.png', allowMultiple: false, sizeMode: 'portfolio' },
-  About: { component: About, icon: '/images/logo.png', allowMultiple: false, sizeMode: 'portfolio' },
-  Resume: { component: Resume, icon: '/images/note.png', allowMultiple: false, sizeMode: 'portfolio' },
-  ErrorLog: { component: ErrorLog, icon: '/images/settings.png', allowMultiple: false, sizeMode: 'portfolio' }
+  Calculator: { component: Calculator, icon: getAssetPath('images/calculator.apng'), allowMultiple: false, sizeMode: 'calculator' },
+  Terminal: { component: Terminal, icon: getAssetPath('images/terminal.png'), allowMultiple: false },
+  Chrome: { component: Chrome, icon: getAssetPath('images/chrome.png'), allowMultiple: false },
+  Settings: { component: Settings, icon: getAssetPath('images/settings.png'), allowMultiple: false },
+  'File Explorer': { component: FileExplorer, icon: getAssetPath('images/file-explorer.png'), allowMultiple: false },
+  'Trash Bin': { component: TrashBin, icon: getAssetPath('images/bin.png'), allowMultiple: false },
+  Notes: { component: Notes, icon: getAssetPath('images/note.png'), allowMultiple: true },
+  Projects: { component: Projects, icon: getAssetPath('images/file-explorer.png'), allowMultiple: false, sizeMode: 'portfolio', adaptiveScale: true },
+  Skills: { component: Skills, icon: getAssetPath('images/settings.png'), allowMultiple: false, sizeMode: 'portfolio', adaptiveScale: true },
+  Contact: { component: Contact, icon: getAssetPath('images/note.png'), allowMultiple: false, sizeMode: 'portfolio' },
+  About: { component: About, icon: getAssetPath('images/logo.png'), allowMultiple: false, sizeMode: 'portfolio', adaptiveScale: true },
+  Resume: { component: Resume, icon: getAssetPath('images/note.png'), allowMultiple: false, sizeMode: 'portfolio', adaptiveScale: true },
+  ErrorLog: { component: ErrorLog, icon: getAssetPath('images/settings.png'), allowMultiple: false, sizeMode: 'portfolio', adaptiveScale: true }
 }
 
 const APP_LAUNCH_DELAYS = {
@@ -147,7 +148,9 @@ function buildInitialDesktopIcons() {
     return {
       id: app.toLowerCase().replace(/\s+/g, '-'),
       label: app,
-      src: APP_DEFINITIONS[app]?.icon || '/images/logo.png',
+      src: APP_DEFINITIONS[app]?.icon || getAssetPath('images/logo.png'),
+      appType: app,
+      type: 'application',
       x: ICON_MARGIN + col * ICON_COLUMN_WIDTH,
       y: ICON_MARGIN + row * ICON_ROW_HEIGHT
     }
@@ -421,7 +424,8 @@ function App() {
           maximized: false,
           minimized: false,
           lastBounds: null,
-          isCalculator: appType === 'Calculator'
+          isCalculator: appType === 'Calculator',
+          adaptiveScale: Boolean(definition.adaptiveScale)
         }
 
         return [...prev, newWindow]
@@ -467,6 +471,73 @@ function App() {
     return false
   }, [addNotification])
 
+  const findAvailableDesktopSlot = useCallback((icons) => {
+    const ICON_WIDTH = 80
+    const ICON_HEIGHT = 70
+    const bounds = getDesktopBounds()
+    const maxX = bounds.width - ICON_WIDTH - ICON_MARGIN
+    const maxY = bounds.height - ICON_HEIGHT - ICON_MARGIN
+
+    for (let col = 0; col < Math.ceil(bounds.width / ICON_COLUMN_WIDTH); col += 1) {
+      for (let row = 0; row < Math.ceil(bounds.height / ICON_ROW_HEIGHT); row += 1) {
+        const candidateX = ICON_MARGIN + col * ICON_COLUMN_WIDTH
+        const candidateY = ICON_MARGIN + row * ICON_ROW_HEIGHT
+
+        if (candidateX > maxX || candidateY > maxY) {
+          continue
+        }
+
+        const occupied = icons.some(icon => (
+          Math.abs(icon.x - candidateX) < ICON_WIDTH && Math.abs(icon.y - candidateY) < ICON_HEIGHT
+        ))
+
+        if (!occupied) {
+          return { x: candidateX, y: candidateY }
+        }
+      }
+    }
+
+    return { x: ICON_MARGIN, y: ICON_MARGIN }
+  }, [])
+
+  const createDesktopItem = useCallback((itemType) => {
+    const isFolder = itemType === 'folder'
+    const baseName = isFolder ? 'New Folder' : 'New Text Document'
+    const extension = isFolder ? '' : '.txt'
+
+    setDesktopIcons(prev => {
+      const existingLabels = new Set(prev.map(icon => icon.label))
+
+      let suffix = 0
+      let candidateLabel = `${baseName}${extension}`
+
+      while (existingLabels.has(candidateLabel)) {
+        suffix += 1
+        candidateLabel = `${baseName} (${suffix + 1})${extension}`
+      }
+
+      const position = findAvailableDesktopSlot(prev)
+
+      return [
+        ...prev,
+        {
+          id: `${itemType}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          label: candidateLabel,
+          src: isFolder ? getAssetPath('images/file-explorer.png') : getAssetPath('images/note.png'),
+          x: position.x,
+          y: position.y,
+          type: isFolder ? 'folder' : 'text',
+          appType: isFolder ? 'File Explorer' : 'Notes'
+        }
+      ]
+    })
+
+    addNotification('success', `${isFolder ? 'Folder' : 'Text file'} created on desktop`, {
+      title: 'Desktop',
+      duration: 2200
+    })
+  }, [addNotification, findAvailableDesktopSlot])
+
   const deleteIcon = useCallback((iconId) => {
     setDesktopIcons(prev => {
       const iconToDelete = prev.find(icon => icon.id === iconId)
@@ -479,7 +550,7 @@ function App() {
         {
           ...iconToDelete,
           deletedDate: new Date().toLocaleString(),
-          type: 'application'
+          type: iconToDelete.type || 'application'
         }
       ]))
 
@@ -591,6 +662,10 @@ function App() {
     if (typeof window !== 'undefined') {
       window.soundManager = soundManager
       soundManager.setVolume(0.3)
+      document.documentElement.style.setProperty(
+        '--os-wallpaper',
+        `url("${getAssetPath('images/wallpaper.png')}")`
+      )
     }
 
     const launchTimers = launchTimersRef.current
@@ -832,6 +907,7 @@ function App() {
           openWindow={openWindow}
           icons={desktopIcons}
           onDeleteIcon={deleteIcon}
+          onCreateDesktopItem={createDesktopItem}
           onUpdateIconPosition={updateIconPosition}
           windows={windowsWithChildren}
           closeWindow={closeWindow}

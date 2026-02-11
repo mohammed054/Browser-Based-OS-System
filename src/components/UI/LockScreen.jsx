@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { PROFILE } from '../../config/profile';
 
 const LockScreen = ({ isVisible, onUnlock, currentTime, currentDate, autoLogin = false, loginState = 'idle' }) => {
   const [showLogin, setShowLogin] = useState(false);
@@ -73,9 +74,9 @@ const LockScreen = ({ isVisible, onUnlock, currentTime, currentDate, autoLogin =
         <div className="login-screen" onClick={(e) => e.stopPropagation()}>
           <div className="login-form">
             <div className="login-header">
-              <div className="login-avatar">MH</div>
+              <div className="login-avatar">{PROFILE.initials}</div>
               <div className="login-title">Welcome Back</div>
-              <div className="login-subtitle">Mohammed Hassoun</div>
+              <div className="login-subtitle">{PROFILE.name}</div>
             </div>
 
             <form onSubmit={handleSubmit}>
@@ -131,12 +132,12 @@ const LockScreen = ({ isVisible, onUnlock, currentTime, currentDate, autoLogin =
                   transition: 'all 0.3s ease'
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.color = 'rgba(255, 255, 255, 0.8)';
-                  e.target.style.background = 'rgba(255, 255, 255, 0.1)';
+                  e.currentTarget.style.color = 'rgba(255, 255, 255, 0.8)';
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.color = 'rgba(255, 255, 255, 0.6)';
-                  e.target.style.background = 'none';
+                  e.currentTarget.style.color = 'rgba(255, 255, 255, 0.6)';
+                  e.currentTarget.style.background = 'none';
                 }}
               >
                 Cancel
@@ -162,3 +163,4 @@ const LockScreen = ({ isVisible, onUnlock, currentTime, currentDate, autoLogin =
 };
 
 export default LockScreen;
+

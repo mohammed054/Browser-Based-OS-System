@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { PROFILE } from '../config/profile';
 
 const Resume = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -7,13 +8,13 @@ const Resume = () => {
 
   const resumeContent = {
     personal: {
-      name: 'Mohammed Hassoun',
-      title: 'Frontend Engineer / OS-style UI Builder',
-      location: 'San Francisco, CA',
-      email: 'mohammed.hassoun@example.com',
-      phone: '+1 (555) 123-4567',
-      linkedin: 'linkedin.com/in/mohammedhassoun',
-      github: 'github.com/mhassoun'
+      name: PROFILE.name,
+      title: PROFILE.title,
+      location: PROFILE.location,
+      email: PROFILE.email,
+      phone: PROFILE.phone,
+      linkedin: PROFILE.linkedin,
+      github: PROFILE.github
     },
     summary: `Passionate frontend engineer with 5+ years of experience building innovative web applications and browser-based experiences. Specialized in React, advanced UI/UX design, and system architecture. Proven track record of delivering high-performance, user-centric solutions that push the boundaries of what's possible in modern browsers.`,
     experience: [

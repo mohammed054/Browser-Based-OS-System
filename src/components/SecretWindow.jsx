@@ -76,12 +76,12 @@ const SecretWindow = ({ isVisible, onClose }) => {
               transition: 'all 0.2s'
             }}
             onMouseEnter={(e) => {
-              e.target.style.background = 'var(--os-cyan, #38bdf8)';
-              e.target.style.color = 'black';
+              e.currentTarget.style.background = 'var(--os-cyan, #38bdf8)';
+              e.currentTarget.style.color = 'black';
             }}
             onMouseLeave={(e) => {
-              e.target.style.background = 'transparent';
-              e.target.style.color = 'var(--os-cyan, #38bdf8)';
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = 'var(--os-cyan, #38bdf8)';
             }}
           >
             ×

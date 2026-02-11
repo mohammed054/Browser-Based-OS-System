@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './BootScreen.css';
+import { PROFILE } from '../../config/profile';
 
 const BOOT_LOGS = [
   '[ OK ] Window Manager',
@@ -37,7 +38,7 @@ const BootScreen = ({ onBootComplete }) => {
     <div className="boot-screen">
         <div className="boot-content">
         <div className="os-info">
-          <h1 className="os-title">MohammedOS v4.0</h1>
+          <h1 className="os-title">{PROFILE.firstName}OS v4.0</h1>
           <div className="boot-status">
             <span>Initializing system</span>
             <div className="loading-circle"></div>

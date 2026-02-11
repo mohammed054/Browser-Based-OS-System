@@ -42,7 +42,8 @@ const WindowFrame = ({
   onToggleMaximize,
   onMinimize,
   isActive,
-  isCalculator = false
+  isCalculator = false,
+  adaptiveScale = false
 }) => {
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
@@ -240,6 +241,8 @@ const WindowFrame = ({
     bottomRight: { position: 'absolute', bottom: -3, right: -3, width: 10, height: 10, cursor: 'nwse-resize', zIndex: theme.zIndex.windowDragging + 1 }
   }
 
+  const contentScale = adaptiveScale && maximized ? 1.45 : 1
+
   return (
     <div className="window-container" style={containerStyle} onMouseDown={onFocus}>
       {!maximized && (
@@ -358,7 +361,17 @@ const WindowFrame = ({
             overflow: 'auto'
           }}
         >
-          {children}
+          <div
+            style={{
+              minHeight: '100%',
+              transform: contentScale === 1 ? 'none' : `scale(${contentScale})`,
+              transformOrigin: 'top left',
+              width: contentScale === 1 ? '100%' : `${100 / contentScale}%`,
+              height: contentScale === 1 ? '100%' : `${100 / contentScale}%`
+            }}
+          >
+            {children}
+          </div>
         </div>
       </div>
     </div>

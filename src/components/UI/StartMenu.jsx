@@ -1,34 +1,55 @@
-﻿import { useMemo } from 'react'
+import { useMemo } from 'react'
 import { comprehensiveSearch } from '../SearchEngine'
+import { getAssetPath } from '../../utils/assets'
+import { PROFILE } from '../../config/profile'
+
+const APP_ICONS = {
+  Projects: getAssetPath('images/file-explorer.png'),
+  Skills: getAssetPath('images/settings.png'),
+  Contact: getAssetPath('images/note.png'),
+  About: getAssetPath('images/logo.png'),
+  Terminal: getAssetPath('images/terminal.png'),
+  Settings: getAssetPath('images/settings.png'),
+  Calculator: getAssetPath('images/calculator.apng'),
+  Chrome: getAssetPath('images/chrome.png'),
+  'File Explorer': getAssetPath('images/file-explorer.png'),
+  'Trash Bin': getAssetPath('images/bin.png'),
+  Notes: getAssetPath('images/note.png'),
+  Resume: getAssetPath('images/note.png'),
+  ErrorLog: getAssetPath('images/settings.png')
+}
 
 const PINNED_APPS = [
-  { name: 'Projects', icon: '/images/file-explorer.png', description: 'My portfolio projects' },
-  { name: 'Skills', icon: '/images/settings.png', description: 'Technical skills and expertise' },
-  { name: 'Contact', icon: '/images/note.png', description: 'Get in touch with me' },
-  { name: 'About', icon: '/images/logo.png', description: 'About me and my resume' },
-  { name: 'Terminal', icon: '/images/terminal.png', description: 'Command terminal' },
-  { name: 'Settings', icon: '/images/settings.png', description: 'System settings' }
+  { name: 'Projects', description: 'My portfolio projects' },
+  { name: 'Skills', description: 'Technical skills and expertise' },
+  { name: 'Contact', description: 'Get in touch with me' },
+  { name: 'About', description: 'About me and my resume' },
+  { name: 'Terminal', description: 'Command terminal' },
+  { name: 'Settings', description: 'System settings' }
+].map(app => ({ ...app, icon: APP_ICONS[app.name] }))
+
+const ALL_APP_ENTRIES = [
+  ...PINNED_APPS,
+  { name: 'Calculator', description: 'Calculator app', icon: APP_ICONS.Calculator },
+  { name: 'Chrome', description: 'Web browser', icon: APP_ICONS.Chrome },
+  { name: 'File Explorer', description: 'File manager', icon: APP_ICONS['File Explorer'] },
+  { name: 'Trash Bin', description: 'Deleted items', icon: APP_ICONS['Trash Bin'] },
+  { name: 'Notes', description: 'Note-taking app', icon: APP_ICONS.Notes },
+  { name: 'Resume', description: 'Resume viewer', icon: APP_ICONS.Resume },
+  { name: 'ErrorLog', description: 'System diagnostics', icon: APP_ICONS.ErrorLog }
 ]
 
-const ALL_APPS = [
-  ...PINNED_APPS,
-  { name: 'Calculator', icon: '/images/calculator.apng', description: 'Calculator app' },
-  { name: 'Chrome', icon: '/images/chrome.png', description: 'Web browser' },
-  { name: 'File Explorer', icon: '/images/file-explorer.png', description: 'File manager' },
-  { name: 'Trash Bin', icon: '/images/bin.png', description: 'Deleted items' },
-  { name: 'Notes', icon: '/images/note.png', description: 'Note-taking app' },
-  { name: 'Resume', icon: '/images/note.png', description: 'Resume viewer' },
-  { name: 'ErrorLog', icon: '/images/settings.png', description: 'System diagnostics' }
-]
+const ALL_APPS = Array.from(
+  new Map(ALL_APP_ENTRIES.map(app => [app.name, app])).values()
+)
 
 const SORTED_APPS = [...ALL_APPS].sort((a, b) => a.name.localeCompare(b.name))
 
 function getAppIcon(appName) {
-  return ALL_APPS.find(app => app.name === appName)?.icon || '/images/logo.png'
+  return ALL_APPS.find(app => app.name === appName)?.icon || getAssetPath('images/logo.png')
 }
 
 const StartMenu = ({ isOpen, onClose, openWindow, searchTerm, setSearchTerm, addNotification }) => {
-
   const filteredApps = useMemo(() => {
     if (!searchTerm.trim()) {
       return SORTED_APPS
@@ -39,6 +60,7 @@ const StartMenu = ({ isOpen, onClose, openWindow, searchTerm, setSearchTerm, add
       app.name.toLowerCase().includes(query) || app.description.toLowerCase().includes(query)
     ))
   }, [searchTerm])
+
   const searchResults = useMemo(() => {
     if (!searchTerm.trim()) {
       return []
@@ -84,11 +106,11 @@ const StartMenu = ({ isOpen, onClose, openWindow, searchTerm, setSearchTerm, add
   }
 
   return (
-    <div className="start-menu">
+    <div className="start-menu" onClick={(event) => event.stopPropagation()}>
       <div className="profile-header">
-        <div className="avatar">MH</div>
+        <div className="avatar">{PROFILE.initials}</div>
         <div className="user-info">
-          <div className="name">Mohammed Hassoun</div>
+          <div className="name">{PROFILE.name}</div>
           <div className="title">Web OS Engineer</div>
         </div>
       </div>
@@ -171,4 +193,3 @@ const StartMenu = ({ isOpen, onClose, openWindow, searchTerm, setSearchTerm, add
 }
 
 export default StartMenu
-
