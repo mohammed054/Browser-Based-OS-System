@@ -207,6 +207,13 @@ const Desktop = ({
 
   const wallpaperUrl = `url("${getAssetPath('images/wallpaper.png')}")`
 
+  const desktopStyle = {
+    backgroundImage: wallpaperUrl,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat'
+  }
+
   return (
     <div
       className="desktop"
