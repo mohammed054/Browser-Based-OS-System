@@ -1,5 +1,5 @@
-﻿import './style.css'
-import { useState, useCallback, useEffect, Suspense, lazy, useMemo, useRef } from 'react'
+﻿﻿import './style.css'
+import { useState, useCallback, useEffect, Suspense, lazy, useMemo, useRef, useSyncExternalStore } from 'react'
 import Desktop from './components/UI/Desktop'
 import Taskbar from './components/Taskbar'
 import NotificationCenter from './components/UI/NotificationCenter'
@@ -13,6 +13,7 @@ import OSCursor from './components/UI/OSCursor'
 import { soundManager } from './utils/SoundManager'
 import { MobileFallback, SimplifiedPortfolio } from './components/MobileFallback'
 import { getAssetPath } from './utils/assets'
+import windowManager from './managers/WindowManager'
 
 const Calculator = lazy(() => import('./components/Calculator'))
 const Terminal = lazy(() => import('./components/Terminal'))
@@ -92,46 +93,6 @@ function getDesktopBounds() {
   }
 }
 
-function computeInitialWindowSize(appType, bounds) {
-  const sizeMode = APP_DEFINITIONS[appType]?.sizeMode
-
-  if (sizeMode === 'calculator') {
-    const availableHeight = bounds.height - 20
-    const maxHeight = Math.min(availableHeight, Math.floor(320 * 16 / 9))
-    const width = Math.min(320, Math.floor(maxHeight * 9 / 16))
-    const height = Math.floor(width * 16 / 9)
-    return { width, height }
-  }
-
-  if (sizeMode === 'portfolio') {
-    return {
-      width: Math.max(520, Math.floor(bounds.width * 0.68)),
-      height: Math.max(420, Math.floor(bounds.height * 0.68))
-    }
-  }
-
-  return {
-    width: Math.floor(bounds.width * 0.75),
-    height: Math.floor(bounds.height * 0.75)
-  }
-}
-
-function clampWindowToBounds(windowState, bounds) {
-  const width = Math.max(260, Math.min(windowState.width, bounds.width))
-  const height = Math.max(180, Math.min(windowState.height, bounds.height))
-
-  const maxX = Math.max(0, bounds.width - width)
-  const maxY = Math.max(0, bounds.height - height)
-
-  return {
-    ...windowState,
-    width,
-    height,
-    x: Math.max(0, Math.min(windowState.x, maxX)),
-    y: Math.max(0, Math.min(windowState.y, maxY))
-  }
-}
-
 function buildInitialDesktopIcons() {
   if (typeof window === 'undefined') {
     return []
@@ -166,8 +127,10 @@ function App() {
   const [isLocked, setIsLocked] = useState(false)
   const [theme, setTheme] = useState('dark')
 
-  const [windows, setWindows] = useState([])
-  const [activeWindowId, setActiveWindowId] = useState(null)
+  const { windows, activeWindowId } = useSyncExternalStore(
+    (callback) => windowManager.subscribe(callback),
+    () => windowManager.getState()
+  )
 
   const [desktopIcons, setDesktopIcons] = useState(() => buildInitialDesktopIcons())
   const [deletedIcons, setDeletedIcons] = useState([
@@ -193,7 +156,6 @@ function App() {
 
   const launchTimersRef = useRef(new Set())
   const loadingAppsRef = useRef(new Set())
-  const windowsRef = useRef([])
 
   const addNotification = useCallback((type, message, options = {}) => {
     const notification = {
@@ -214,149 +176,42 @@ function App() {
   }, [])
 
   const focusWindow = useCallback((id) => {
-    setWindows(prev => {
-      const target = prev.find(window => window.id === id)
-      if (!target) {
-        return prev
-      }
-
-      const others = prev.filter(window => window.id !== id)
-      return [...others, { ...target, minimized: false }]
-    })
-
-    setActiveWindowId(id)
+    windowManager.focusWindow(id)
   }, [])
 
   const closeWindow = useCallback((id) => {
     if (typeof window !== 'undefined' && window.soundManager) {
       window.soundManager.play('windowClose')
     }
-
-    let nextActiveId = null
-    setWindows(prev => {
-      const next = prev.filter(window => window.id !== id)
-      nextActiveId = next.length > 0 ? next[next.length - 1].id : null
-      return next
-    })
-
-    setActiveWindowId(nextActiveId)
+    windowManager.closeWindow(id)
   }, [])
 
   const minimizeWindow = useCallback((id) => {
-    setWindows(prev => prev.map(window => {
-      if (window.id !== id) {
-        return window
-      }
-
-      return { ...window, minimized: true }
-    }))
-
-    setActiveWindowId(prev => (prev === id ? null : prev))
+    windowManager.minimizeWindow(id)
   }, [])
 
   const toggleMaximizeWindow = useCallback((id) => {
-    setWindows(prev => {
-      const bounds = getDesktopBounds()
-
-      return prev.map(window => {
-        if (window.id !== id) {
-          return window
-        }
-
-        if (window.maximized) {
-          if (window.lastBounds) {
-            return {
-              ...window,
-              ...window.lastBounds,
-              maximized: false,
-              lastBounds: null
-            }
-          }
-
-          return { ...window, maximized: false }
-        }
-
-        return {
-          ...window,
-          x: 0,
-          y: 0,
-          width: bounds.width,
-          height: bounds.height,
-          maximized: true,
-          lastBounds: {
-            x: window.x,
-            y: window.y,
-            width: window.width,
-            height: window.height
-          }
-        }
-      })
-    })
+    windowManager.toggleMaximizeWindow(id)
   }, [])
 
   const updateWindowPosition = useCallback((id, x, y) => {
-    setWindows(prev => {
-      const bounds = getDesktopBounds()
-
-      return prev.map(window => {
-        if (window.id !== id || window.maximized) {
-          return window
-        }
-
-        const maxX = Math.max(0, bounds.width - window.width)
-        const maxY = Math.max(0, bounds.height - window.height)
-
-        return {
-          ...window,
-          x: Math.max(0, Math.min(x, maxX)),
-          y: Math.max(0, Math.min(y, maxY))
-        }
-      })
-    })
+    windowManager.updateWindowPosition(id, x, y)
   }, [])
 
   const updateWindowSize = useCallback((id, width, height) => {
-    setWindows(prev => {
-      const bounds = getDesktopBounds()
-
-      return prev.map(window => {
-        if (window.id !== id || window.maximized) {
-          return window
-        }
-
-        const safeWidth = Math.max(260, Math.min(width, bounds.width - window.x))
-        const safeHeight = Math.max(180, Math.min(height, bounds.height - window.y))
-
-        return {
-          ...window,
-          width: safeWidth,
-          height: safeHeight
-        }
-      })
-    })
+    windowManager.updateWindowSize(id, width, height)
   }, [])
 
   const handleTaskbarWindowAction = useCallback((id) => {
-    let nextActiveId = activeWindowId
+    const target = windows.find(w => w.id === id)
+    if (!target) return
 
-    setWindows(prev => {
-      const target = prev.find(window => window.id === id)
-      if (!target) {
-        return prev
-      }
-
-      if (!target.minimized && activeWindowId === id) {
-        nextActiveId = null
-        return prev.map(window => (window.id === id ? { ...window, minimized: true } : window))
-      }
-
-      nextActiveId = id
-      const others = prev.filter(window => window.id !== id)
-      return [...others, { ...target, minimized: false }]
-    })
-
-    setActiveWindowId(nextActiveId)
-  }, [activeWindowId])
+    if (!target.minimized && activeWindowId === id) {
+      windowManager.minimizeWindow(id)
+    } else {
+      windowManager.focusWindow(id)
+    }
+  }, [windows, activeWindowId])
 
   const openWindow = useCallback((appType) => {
     const definition = APP_DEFINITIONS[appType]
@@ -374,9 +229,9 @@ function App() {
     }
 
     if (!definition.allowMultiple) {
-      const existing = windowsRef.current.find(window => window.appType === appType)
+      const existing = windowManager.getWindows().find(window => window.appType === appType)
       if (existing) {
-        focusWindow(existing.id)
+        windowManager.focusWindow(existing.id)
         return
       }
     }
@@ -393,47 +248,7 @@ function App() {
     const timerId = window.setTimeout(() => {
       loadingAppsRef.current.delete(appType)
 
-      let nextWindowId = null
-
-      setWindows(prev => {
-        const bounds = getDesktopBounds()
-        const size = computeInitialWindowSize(appType, bounds)
-
-        const width = Math.min(size.width, bounds.width)
-        const height = Math.min(size.height, bounds.height)
-
-        const maxOffsetX = Math.max(0, bounds.width - width)
-        const maxOffsetY = Math.max(0, bounds.height - height)
-        const cascade = (prev.length % 8) * 24
-
-        const x = Math.min(Math.max(0, Math.floor((bounds.width - width) / 2 + cascade)), maxOffsetX)
-        const y = Math.min(Math.max(0, Math.floor((bounds.height - height) / 2 + cascade)), maxOffsetY)
-
-        const instanceCount = prev.filter(window => window.appType === appType).length
-        nextWindowId = definition.allowMultiple ? `${appType}-${instanceCount + 1}` : appType
-
-        const newWindow = {
-          id: nextWindowId,
-          appType,
-          title: appType,
-          component: definition.component,
-          x,
-          y,
-          width,
-          height,
-          maximized: false,
-          minimized: false,
-          lastBounds: null,
-          isCalculator: appType === 'Calculator',
-          adaptiveScale: Boolean(definition.adaptiveScale)
-        }
-
-        return [...prev, newWindow]
-      })
-
-      if (nextWindowId) {
-        setActiveWindowId(nextWindowId)
-      }
+      windowManager.openWindow(appType)
 
       launchTimersRef.current.delete(timerId)
     }, launchDelay)
@@ -655,10 +470,6 @@ function App() {
   })), [windows, renderWindowContent])
 
   useEffect(() => {
-    windowsRef.current = windows
-  }, [windows])
-
-  useEffect(() => {
     if (typeof window !== 'undefined') {
       window.soundManager = soundManager
       soundManager.setVolume(0.3)
@@ -697,19 +508,7 @@ function App() {
     const handleResizeNow = () => {
       const bounds = getDesktopBounds()
 
-      setWindows(prev => prev.map(windowState => {
-        if (windowState.maximized) {
-          return {
-            ...windowState,
-            x: 0,
-            y: 0,
-            width: bounds.width,
-            height: bounds.height
-          }
-        }
-
-        return clampWindowToBounds(windowState, bounds)
-      }))
+      windowManager.handleScreenResize()
 
       setDesktopIcons(prev => {
         const maxX = bounds.width - 80 - ICON_MARGIN
@@ -753,7 +552,7 @@ function App() {
         }
 
         const currentIndex = visibleWindows.findIndex(windowState => windowState.id === activeWindowId)
-        const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % visibleWindows.length
+        const nextIndex = (currentIndex + 1) % visibleWindows.length
 
         focusWindow(visibleWindows[nextIndex].id)
       },

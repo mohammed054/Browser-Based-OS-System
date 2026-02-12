@@ -1,10 +1,21 @@
 import appRegistry from './AppRegistry.js'
 
+const TASKBAR_HEIGHT = 48
+
 class WindowManager {
   constructor() {
     this.windows = []
     this.activeWindowId = null
     this.listeners = new Set()
+    this.snapshot = { windows: [], activeWindowId: null }
+  }
+
+  getDesktopBounds() {
+    if (typeof window === 'undefined') return { width: 1280, height: 720 }
+    return {
+      width: window.innerWidth,
+      height: Math.max(320, window.innerHeight - TASKBAR_HEIGHT)
+    }
   }
 
   // Subscribe to window state changes
@@ -15,10 +26,11 @@ class WindowManager {
 
   // Notify all listeners of state changes
   notify() {
-    this.listeners.forEach(listener => listener({
+    this.snapshot = {
       windows: [...this.windows],
       activeWindowId: this.activeWindowId
-    }))
+    }
+    this.listeners.forEach(listener => listener())
   }
 
   // Generate unique ID for windows
@@ -28,8 +40,7 @@ class WindowManager {
     }
 
     // For apps that allow multiple instances
-    const existingCount = this.windows.filter(w => w.appType === appType).length
-    return `${appType}-${existingCount + 1}`
+    return `${appType}-${Date.now()}`
   }
 
   // Open a new window
@@ -51,7 +62,7 @@ class WindowManager {
 
     // Calculate desktop dimensions
     const desktopWidth = window.innerWidth
-    const desktopHeight = window.innerHeight - 48 // taskbar height
+    const desktopHeight = window.innerHeight - TASKBAR_HEIGHT
 
     // Generate window dimensions
     const dimensions = this.calculateWindowDimensions(appType, desktopWidth, desktopHeight)
@@ -153,8 +164,14 @@ class WindowManager {
   updateWindowPosition(id, x, y) {
     const window = this.windows.find(w => w.id === id)
     if (window) {
-      window.x = x
-      window.y = y
+      const bounds = this.getDesktopBounds()
+      const maxX = Math.max(0, bounds.width - window.width)
+      const maxY = Math.max(0, bounds.height - window.height)
+
+      // Clamp to bounds
+      window.x = Math.max(0, Math.min(x, maxX))
+      window.y = Math.max(0, Math.min(y, maxY))
+      
       this.notify()
     }
   }
@@ -163,8 +180,12 @@ class WindowManager {
   updateWindowSize(id, width, height) {
     const window = this.windows.find(w => w.id === id)
     if (window) {
-      window.width = width
-      window.height = height
+      const bounds = this.getDesktopBounds()
+      const safeWidth = Math.max(260, Math.min(width, bounds.width - window.x))
+      const safeHeight = Math.max(180, Math.min(height, bounds.height - window.y))
+
+      window.width = safeWidth
+      window.height = safeHeight
       this.notify()
     }
   }
@@ -182,7 +203,7 @@ class WindowManager {
     } else {
       // Maximize
       const desktopWidth = window.innerWidth
-      const desktopHeight = window.innerHeight - 48
+      const desktopHeight = window.innerHeight - TASKBAR_HEIGHT
 
       window.lastBounds = {
         x: window.x,
@@ -215,9 +236,37 @@ class WindowManager {
 
   // Get current state
   getState() {
-    return {
-      windows: [...this.windows],
-      activeWindowId: this.activeWindowId
+    return this.snapshot
+  }
+
+  // Handle screen resize
+  handleScreenResize() {
+    const bounds = this.getDesktopBounds()
+    let changed = false
+
+    this.windows.forEach(window => {
+      if (window.maximized) {
+        window.width = bounds.width
+        window.height = bounds.height
+        changed = true
+      } else {
+        // Clamp position if it falls out of bounds
+        const maxX = Math.max(0, bounds.width - window.width)
+        const maxY = Math.max(0, bounds.height - window.height)
+        
+        const newX = Math.max(0, Math.min(window.x, maxX))
+        const newY = Math.max(0, Math.min(window.y, maxY))
+
+        if (newX !== window.x || newY !== window.y) {
+          window.x = newX
+          window.y = newY
+          changed = true
+        }
+      }
+    })
+
+    if (changed) {
+      this.notify()
     }
   }
 
