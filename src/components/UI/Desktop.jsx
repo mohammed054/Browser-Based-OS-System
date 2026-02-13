@@ -224,26 +224,28 @@ const Desktop = ({
       onContextMenu={handleDesktopContextMenu}
       onClick={() => contextMenu && setContextMenu(null)}      
       style={desktopStyle}
+      role="main"
+      aria-label="Desktop workspace"
+      tabIndex={0}
     >
         {icons.map(icon => (
-          <DesktopIcon
-            key={icon.id}
-            id={icon.id}
-            src={icon.src}
-            label={icon.label}
-            type={icon.type}
-            x={icon.x}
-            y={icon.y}
-            isSelected={isIconSelected(icon.id)}
-            onDoubleClick={() => handleIconOpen(icon)}
-            onContextMenu={(event) => handleIconContextMenu(event, icon)}
-            onUpdatePosition={onUpdateIconPosition}
-            onSelectionChange={setSelectedIcons}
-            allIcons={icons}
-            selectedIcons={selectedIcons}
-          />
-        ))}
-
+        <DesktopIcon
+          key={icon.id}
+          id={icon.id}
+          src={icon.src}
+          label={icon.label}
+          type={icon.type}
+          x={icon.x}
+          y={icon.y}
+          isSelected={isIconSelected(icon.id)}
+          onDoubleClick={() => handleIconOpen(icon)}
+          onContextMenu={(event) => handleIconContextMenu(event, icon)}
+          onUpdatePosition={onUpdateIconPosition}
+          onSelectionChange={setSelectedIcons}
+          allIcons={icons}
+          selectedIcons={selectedIcons}
+        />
+      ))}
 
       {selectionRect && (
         <div

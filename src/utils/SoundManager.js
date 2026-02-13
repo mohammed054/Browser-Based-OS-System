@@ -231,7 +231,11 @@ class SoundManager {
 
   destroy() {
     if (this.audioContext) {
-      this.audioContext.close();
+      try {
+        this.audioContext.close();
+      } catch (error) {
+        console.warn('Error closing audio context:', error);
+      }
       this.audioContext = null;
     }
     this.sounds.clear();

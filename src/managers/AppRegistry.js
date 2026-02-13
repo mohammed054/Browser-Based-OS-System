@@ -9,6 +9,12 @@ const Settings = lazy(() => import('../components/Settings'))
 const FileExplorer = lazy(() => import('../components/FileExplorer'))
 const TrashBin = lazy(() => import('../components/TrashBin'))
 const Notes = lazy(() => import('../components/Notes'))
+const Projects = lazy(() => import('../components/Projects'))
+const Skills = lazy(() => import('../components/Skills'))
+const Contact = lazy(() => import('../components/Contact'))
+const About = lazy(() => import('../components/About'))
+const Resume = lazy(() => import('../components/Resume'))
+const ErrorLog = lazy(() => import('../components/ErrorLog'))
 
 class AppRegistry {
   constructor() {
@@ -61,6 +67,48 @@ class AppRegistry {
         allowMultiple: true,
         specialSizing: false,
         icon: getAssetPath('images/note.png')
+      }],
+      ['Projects', {
+        component: Projects,
+        title: 'Projects',
+        allowMultiple: false,
+        specialSizing: false,
+        icon: getAssetPath('images/file-explorer.png')
+      }],
+      ['Skills', {
+        component: Skills,
+        title: 'Skills',
+        allowMultiple: false,
+        specialSizing: false,
+        icon: getAssetPath('images/settings.png')
+      }],
+      ['Contact', {
+        component: Contact,
+        title: 'Contact',
+        allowMultiple: false,
+        specialSizing: false,
+        icon: getAssetPath('images/note.png')
+      }],
+      ['About', {
+        component: About,
+        title: 'About',
+        allowMultiple: false,
+        specialSizing: false,
+        icon: getAssetPath('images/logo.png')
+      }],
+      ['Resume', {
+        component: Resume,
+        title: 'Resume',
+        allowMultiple: false,
+        specialSizing: false,
+        icon: getAssetPath('images/note.png')
+      }],
+      ['ErrorLog', {
+        component: ErrorLog,
+        title: 'Error Log',
+        allowMultiple: false,
+        specialSizing: false,
+        icon: getAssetPath('images/settings.png')
       }]
     ])
   }

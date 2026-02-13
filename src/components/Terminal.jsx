@@ -396,4 +396,3 @@ Type "help" to see available commands.`;
 };
 
 export default Terminal;
-

@@ -55,6 +55,16 @@ const DesktopIcon = ({
     }
   }, [currentPosition, id, isDragging, onUpdatePosition, x, y]);
 
+  const handleMouseLeave = useCallback(() => {
+    if (isDragging) {
+      setIsDragging(false);
+      // Only update if position actually changed
+      if (currentPosition.x !== x || currentPosition.y !== y) {
+        onUpdatePosition(id, currentPosition.x, currentPosition.y, true);
+      }
+    }
+  }, [currentPosition, id, isDragging, onUpdatePosition, x, y]);
+
   useEffect(() => {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
@@ -165,26 +175,36 @@ const DesktopIcon = ({
 
   return (
     <div
-      ref={iconRef}
       className={`desktop-icon ${isSelected ? 'selected' : ''}`}
-      style={iconStyle}
-      onMouseDown={handleMouseDown}
+      style={{
+        position: 'absolute',
+        left: x,
+        top: y,
+        width: theme.dimensions.iconSize,
+        height: theme.dimensions.iconSize,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        gap: theme.spacing.xs,
+        cursor: 'pointer',
+        zIndex: isSelected ? theme.zIndex.overlay : theme.zIndex.icon,
+        userSelect: 'none'
+      }}
       onDoubleClick={handleDoubleClick}
       onContextMenu={handleContextMenu}
-      onMouseEnter={(e) => {
-        if (!isDragging && !isSelected) {
-          e.currentTarget.style.filter = 'drop-shadow(0 0 8px rgba(56, 189, 248, 0.4)) brightness(1.1)';
-          e.currentTarget.style.transform = 'scale(1.05)';
-          e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.05)';
-          e.currentTarget.style.border = `2px solid ${theme.colors.accentPrimary}30`;
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!isDragging && !isSelected) {
-          e.currentTarget.style.filter = 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))';
-          e.currentTarget.style.transform = 'scale(1)';
-          e.currentTarget.style.backgroundColor = 'transparent';
-          e.currentTarget.style.border = '2px solid transparent';
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
+      role="button"
+      aria-label={label}
+      aria-pressed={isSelected}
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          handleDoubleClick()
         }
       }}
     >

@@ -119,7 +119,6 @@ const Calculator = () => {
     { label: '5', action: () => handleInput('5') },
     { label: '6', action: () => handleInput('6') },
     { label: '×', action: () => handleInput('*'), className: 'operator' },
-    // Last two rows exactly as specified:
     // Row 4: 1, 2, 3, =
     { label: '1', action: () => handleInput('1') },
     { label: '2', action: () => handleInput('2') },
@@ -128,7 +127,8 @@ const Calculator = () => {
     // Row 5: %, 0, ., =
     { label: '%', action: () => handleInput('%'), className: 'operator' },
     { label: '0', action: () => handleInput('0') },
-    { label: '.', action: () => handleInput('.') }
+    { label: '.', action: () => handleInput('.') },
+    { label: '=', action: handleCalculate, className: 'equals' }
   ];
 
   return (

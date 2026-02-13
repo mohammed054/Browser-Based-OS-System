@@ -98,26 +98,38 @@ class WindowManager {
 
   // Calculate window dimensions based on app type
   calculateWindowDimensions(appType, desktopWidth, desktopHeight) {
-    const defaultWidth = Math.floor(desktopWidth * 0.75)
-    const defaultHeight = Math.floor(desktopHeight * 0.75)
+    // Validate input parameters
+    const safeDesktopWidth = Number.isFinite(desktopWidth) && desktopWidth > 0 ? desktopWidth : 1280
+    const safeDesktopHeight = Number.isFinite(desktopHeight) && desktopHeight > 0 ? desktopHeight : 720
+
+    const defaultWidth = Math.floor(safeDesktopWidth * 0.75)
+    const defaultHeight = Math.floor(safeDesktopHeight * 0.75)
+
+    // Ensure minimum dimensions
+    const safeDefaultWidth = Math.max(260, defaultWidth)
+    const safeDefaultHeight = Math.max(180, defaultHeight)
 
     if (appRegistry.hasSpecialSizing(appType)) {
       // Special sizing for Calculator (portrait mode)
-      const availableHeight = desktopHeight - 20
+      const availableHeight = safeDesktopHeight - 20
       const aspectRatioHeight = Math.floor(320 * 16 / 9) // 568px for 320px width
       const maxAllowedHeight = Math.min(aspectRatioHeight, availableHeight)
       const calculatedWidth = Math.min(320, Math.floor(maxAllowedHeight * 9 / 16))
       const calculatedHeight = Math.floor(calculatedWidth * 16 / 9)
 
+      // Ensure calculated dimensions are valid
+      const safeCalculatedWidth = Number.isFinite(calculatedWidth) && calculatedWidth > 0 ? calculatedWidth : 320
+      const safeCalculatedHeight = Number.isFinite(calculatedHeight) && calculatedHeight > 0 ? calculatedHeight : 568
+
       return {
-        width: calculatedWidth,
-        height: calculatedHeight
+        width: safeCalculatedWidth,
+        height: safeCalculatedHeight
       }
     }
 
     return {
-      width: defaultWidth,
-      height: defaultHeight
+      width: safeDefaultWidth,
+      height: safeDefaultHeight
     }
   }
 
@@ -165,12 +177,24 @@ class WindowManager {
     const window = this.windows.find(w => w.id === id)
     if (window) {
       const bounds = this.getDesktopBounds()
-      const maxX = Math.max(0, bounds.width - window.width)
-      const maxY = Math.max(0, bounds.height - window.height)
+      
+      // Validate bounds
+      const safeBoundsWidth = Number.isFinite(bounds.width) && bounds.width > 0 ? bounds.width : 1280
+      const safeBoundsHeight = Number.isFinite(bounds.height) && bounds.height > 0 ? bounds.height : 720
+      
+      // Validate window dimensions
+      const safeWindowWidth = Number.isFinite(window.width) && window.width > 0 ? window.width : 260
+      const safeWindowHeight = Number.isFinite(window.height) && window.height > 0 ? window.height : 180
 
-      // Clamp to bounds
-      window.x = Math.max(0, Math.min(x, maxX))
-      window.y = Math.max(0, Math.min(y, maxY))
+      const maxX = Math.max(0, safeBoundsWidth - safeWindowWidth)
+      const maxY = Math.max(0, safeBoundsHeight - safeWindowHeight)
+
+      // Clamp to bounds and ensure valid numbers
+      const safeX = Number.isFinite(x) ? x : 0
+      const safeY = Number.isFinite(y) ? y : 0
+
+      window.x = Math.max(0, Math.min(safeX, maxX))
+      window.y = Math.max(0, Math.min(safeY, maxY))
       
       this.notify()
     }
@@ -181,11 +205,27 @@ class WindowManager {
     const window = this.windows.find(w => w.id === id)
     if (window) {
       const bounds = this.getDesktopBounds()
-      const safeWidth = Math.max(260, Math.min(width, bounds.width - window.x))
-      const safeHeight = Math.max(180, Math.min(height, bounds.height - window.y))
+      
+      // Validate bounds
+      const safeBoundsWidth = Number.isFinite(bounds.width) && bounds.width > 0 ? bounds.width : 1280
+      const safeBoundsHeight = Number.isFinite(bounds.height) && bounds.height > 0 ? bounds.height : 720
+      
+      // Validate current window position
+      const safeWindowX = Number.isFinite(window.x) && window.x >= 0 ? window.x : 0
+      const safeWindowY = Number.isFinite(window.y) && window.y >= 0 ? window.y : 0
 
-      window.width = safeWidth
-      window.height = safeHeight
+      // Validate new dimensions
+      const safeWidth = Number.isFinite(width) ? width : window.width
+      const safeHeight = Number.isFinite(height) ? height : window.height
+
+      const maxAllowedWidth = Math.max(260, safeBoundsWidth - safeWindowX)
+      const maxAllowedHeight = Math.max(180, safeBoundsHeight - safeWindowY)
+
+      const finalWidth = Math.max(260, Math.min(safeWidth, maxAllowedWidth))
+      const finalHeight = Math.max(180, Math.min(safeHeight, maxAllowedHeight))
+
+      window.width = finalWidth
+      window.height = finalHeight
       this.notify()
     }
   }
@@ -197,13 +237,18 @@ class WindowManager {
 
     if (window.maximized) {
       // Restore to last bounds
-      Object.assign(window, window.lastBounds)
-      window.maximized = false
-      window.lastBounds = null
+      if (window.lastBounds) {
+        Object.assign(window, window.lastBounds)
+        window.maximized = false
+        window.lastBounds = null
+      }
     } else {
-      // Maximize
-      const desktopWidth = window.innerWidth
-      const desktopHeight = window.innerHeight - TASKBAR_HEIGHT
+      // Maximize - use proper desktop bounds
+      const desktopBounds = this.getDesktopBounds()
+
+      // Validate desktop bounds
+      const safeDesktopWidth = Number.isFinite(desktopBounds.width) && desktopBounds.width > 0 ? desktopBounds.width : 1280
+      const safeDesktopHeight = Number.isFinite(desktopBounds.height) && desktopBounds.height > 0 ? desktopBounds.height : 720
 
       window.lastBounds = {
         x: window.x,
@@ -212,10 +257,11 @@ class WindowManager {
         height: window.height
       }
 
+      // Set to full desktop bounds with proper validation
       window.x = 0
       window.y = 0
-      window.width = desktopWidth
-      window.height = desktopHeight
+      window.width = safeDesktopWidth
+      window.height = safeDesktopHeight
       window.maximized = true
     }
 
@@ -242,22 +288,36 @@ class WindowManager {
   // Handle screen resize
   handleScreenResize() {
     const bounds = this.getDesktopBounds()
+    
+    // Validate bounds
+    const safeBoundsWidth = Number.isFinite(bounds.width) && bounds.width > 0 ? bounds.width : 1280
+    const safeBoundsHeight = Number.isFinite(bounds.height) && bounds.height > 0 ? bounds.height : 720
+
     let changed = false
 
     this.windows.forEach(window => {
       if (window.maximized) {
-        window.width = bounds.width
-        window.height = bounds.height
+        // Ensure maximized windows get valid dimensions
+        window.width = safeBoundsWidth
+        window.height = safeBoundsHeight
         changed = true
       } else {
-        // Clamp position if it falls out of bounds
-        const maxX = Math.max(0, bounds.width - window.width)
-        const maxY = Math.max(0, bounds.height - window.height)
+        // Validate current window dimensions
+        const safeWindowWidth = Number.isFinite(window.width) && window.width > 0 ? window.width : 260
+        const safeWindowHeight = Number.isFinite(window.height) && window.height > 0 ? window.height : 180
         
-        const newX = Math.max(0, Math.min(window.x, maxX))
-        const newY = Math.max(0, Math.min(window.y, maxY))
+        // Validate current window position
+        const safeWindowX = Number.isFinite(window.x) && window.x >= 0 ? window.x : 0
+        const safeWindowY = Number.isFinite(window.y) && window.y >= 0 ? window.y : 0
 
-        if (newX !== window.x || newY !== window.y) {
+        // Clamp position if it falls out of bounds
+        const maxX = Math.max(0, safeBoundsWidth - safeWindowWidth)
+        const maxY = Math.max(0, safeBoundsHeight - safeWindowHeight)
+        
+        const newX = Math.max(0, Math.min(safeWindowX, maxX))
+        const newY = Math.max(0, Math.min(safeWindowY, maxY))
+
+        if (newX !== safeWindowX || newY !== safeWindowY) {
           window.x = newX
           window.y = newY
           changed = true

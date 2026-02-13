@@ -19,9 +19,17 @@ function getDesktopRect(frameRef) {
 }
 
 function clampPosition(position, size, desktopRect) {
+  // Validate all inputs to prevent NaN values
+  const safePositionX = Number.isFinite(position.x) ? position.x : 0
+  const safePositionY = Number.isFinite(position.y) ? position.y : 0
+  const safeWidth = Number.isFinite(size.width) && size.width > 0 ? size.width : 260
+  const safeHeight = Number.isFinite(size.height) && size.height > 0 ? size.height : 180
+  const safeDesktopWidth = Number.isFinite(desktopRect.width) && desktopRect.width > 0 ? desktopRect.width : 1280
+  const safeDesktopHeight = Number.isFinite(desktopRect.height) && desktopRect.height > 0 ? desktopRect.height : 720
+
   return {
-    x: Math.max(0, Math.min(position.x, Math.max(0, desktopRect.width - size.width))),
-    y: Math.max(0, Math.min(position.y, Math.max(0, desktopRect.height - size.height)))
+    x: Math.max(0, Math.min(safePositionX, Math.max(0, safeDesktopWidth - safeWidth))),
+    y: Math.max(0, Math.min(safePositionY, Math.max(0, safeDesktopHeight - safeHeight)))
   }
 }
 
@@ -165,9 +173,13 @@ const WindowFrame = ({
       return
     }
 
+    // Validate coordinates to prevent NaN
+    const safeX = Number.isFinite(x) ? x : 0
+    const safeY = Number.isFinite(y) ? y : 0
+
     dragRef.current = {
-      offsetX: event.clientX - x,
-      offsetY: event.clientY - y
+      offsetX: event.clientX - safeX,
+      offsetY: event.clientY - safeY
     }
 
     setIsDragging(true)
@@ -211,16 +223,22 @@ const WindowFrame = ({
     return null
   }
 
+  // Validate window dimensions to prevent NaN in CSS
+  const safeX = Number.isFinite(x) ? x : 0
+  const safeY = Number.isFinite(y) ? y : 0
+  const safeWidth = Number.isFinite(width) && width > 0 ? width : 260
+  const safeHeight = Number.isFinite(height) && height > 0 ? height : 180
+
   const containerStyle = {
     position: 'absolute',
-    left: x,
-    top: y,
+    left: safeX,
+    top: safeY,
     zIndex: isDragging || isResizing ? theme.zIndex.windowDragging : (isActive ? theme.zIndex.window + 10 : theme.zIndex.window)
   }
 
   const frameStyle = {
-    width,
-    height,
+    width: safeWidth,
+    height: safeHeight,
     display: 'flex',
     flexDirection: 'column',
     opacity: isMounted ? 1 : 0,
@@ -231,14 +249,14 @@ const WindowFrame = ({
   }
 
   const resizeHandleStyles = {
-    top: { position: 'absolute', top: -3, left: 8, right: 8, height: 6, cursor: 'ns-resize', zIndex: theme.zIndex.windowDragging + 1 },
-    bottom: { position: 'absolute', bottom: -3, left: 8, right: 8, height: 6, cursor: 'ns-resize', zIndex: theme.zIndex.windowDragging + 1 },
-    left: { position: 'absolute', top: 8, bottom: 8, left: -3, width: 6, cursor: 'ew-resize', zIndex: theme.zIndex.windowDragging + 1 },
-    right: { position: 'absolute', top: 8, bottom: 8, right: -3, width: 6, cursor: 'ew-resize', zIndex: theme.zIndex.windowDragging + 1 },
-    topLeft: { position: 'absolute', top: -3, left: -3, width: 10, height: 10, cursor: 'nwse-resize', zIndex: theme.zIndex.windowDragging + 1 },
-    topRight: { position: 'absolute', top: -3, right: -3, width: 10, height: 10, cursor: 'nesw-resize', zIndex: theme.zIndex.windowDragging + 1 },
-    bottomLeft: { position: 'absolute', bottom: -3, left: -3, width: 10, height: 10, cursor: 'nesw-resize', zIndex: theme.zIndex.windowDragging + 1 },
-    bottomRight: { position: 'absolute', bottom: -3, right: -3, width: 10, height: 10, cursor: 'nwse-resize', zIndex: theme.zIndex.windowDragging + 1 }
+    top: { position: 'absolute', top: -4, left: 8, right: 8, height: 8, cursor: 'ns-resize', zIndex: theme.zIndex.windowDragging + 1 },
+    bottom: { position: 'absolute', bottom: -4, left: 8, right: 8, height: 8, cursor: 'ns-resize', zIndex: theme.zIndex.windowDragging + 1 },
+    left: { position: 'absolute', top: 8, bottom: 8, left: -4, width: 8, cursor: 'ew-resize', zIndex: theme.zIndex.windowDragging + 1 },
+    right: { position: 'absolute', top: 8, bottom: 8, right: -4, width: 8, cursor: 'ew-resize', zIndex: theme.zIndex.windowDragging + 1 },
+    topLeft: { position: 'absolute', top: -4, left: -4, width: 12, height: 12, cursor: 'nwse-resize', zIndex: theme.zIndex.windowDragging + 1 },
+    topRight: { position: 'absolute', top: -4, right: -4, width: 12, height: 12, cursor: 'nesw-resize', zIndex: theme.zIndex.windowDragging + 1 },
+    bottomLeft: { position: 'absolute', bottom: -4, left: -4, width: 12, height: 12, cursor: 'nesw-resize', zIndex: theme.zIndex.windowDragging + 1 },
+    bottomRight: { position: 'absolute', bottom: -4, right: -4, width: 12, height: 12, cursor: 'nwse-resize', zIndex: theme.zIndex.windowDragging + 1 }
   }
 
   const contentScale = adaptiveScale && maximized ? 1.45 : 1
@@ -286,21 +304,22 @@ const WindowFrame = ({
             {title}
           </div>
 
-          <div className="window-buttons" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div className="window-buttons" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <button
               type="button"
               className="window-button minimize"
               onClick={handleMinimizeClick}
               style={{
-                width: '18px',
-                height: '18px',
+                width: '24px',
+                height: '24px',
                 borderRadius: '50%',
                 border: 'none',
                 background: '#FACC15',
                 color: '#0B0F14',
                 padding: 0,
                 lineHeight: 1,
-                fontSize: '11px'
+                fontSize: '12px',
+                cursor: 'pointer'
               }}
             >
               -
@@ -312,16 +331,17 @@ const WindowFrame = ({
               onClick={handleMaximizeClick}
               disabled={isCalculator}
               style={{
-                width: '18px',
-                height: '18px',
+                width: '24px',
+                height: '24px',
                 borderRadius: '50%',
                 border: 'none',
                 background: isCalculator ? '#374151' : '#22C55E',
                 color: '#0B0F14',
                 padding: 0,
                 lineHeight: 1,
-                fontSize: '11px',
-                opacity: isCalculator ? 0.5 : 1
+                fontSize: '12px',
+                opacity: isCalculator ? 0.5 : 1,
+                cursor: isCalculator ? 'not-allowed' : 'pointer'
               }}
             >
               +
@@ -335,15 +355,16 @@ const WindowFrame = ({
                 onClose()
               }}
               style={{
-                width: '18px',
-                height: '18px',
+                width: '24px',
+                height: '24px',
                 borderRadius: '50%',
                 border: 'none',
                 background: '#EF4444',
                 color: '#0B0F14',
                 padding: 0,
                 lineHeight: 1,
-                fontSize: '11px'
+                fontSize: '12px',
+                cursor: 'pointer'
               }}
             >
               x

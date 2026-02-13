@@ -137,8 +137,8 @@ export const shadows = {
 export const zIndex = {
   desktop: 1,
   window: 2000,
-  windowDragging: 2100,
-  contextMenu: 12000,
+  windowDragging: 2500,    // Increased to ensure windows stay above context menus when dragging
+  contextMenu: 3000,       // Reduced to allow window dragging above it
   overlay: 15000
 };
 
