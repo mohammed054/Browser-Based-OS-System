@@ -1,4 +1,3 @@
-﻿﻿import './style.css'
 import { useState, useCallback, useEffect, Suspense, lazy, useMemo, useRef, useSyncExternalStore } from 'react'
 import Desktop from './components/UI/Desktop'
 import Taskbar from './components/Taskbar'
@@ -14,6 +13,8 @@ import { soundManager } from './utils/SoundManager'
 import { MobileFallback, SimplifiedPortfolio } from './components/MobileFallback'
 import { getAssetPath } from './utils/assets'
 import windowManager from './managers/WindowManager'
+import { readStorage, writeStorage } from './utils/storage'
+import { SYSTEM_METADATA } from './data/portfolio'
 
 const Calculator = lazy(() => import('./components/Calculator'))
 const Terminal = lazy(() => import('./components/Terminal'))
@@ -34,6 +35,57 @@ const ICON_COLUMN_WIDTH = 120
 const ICON_ROW_HEIGHT = 85
 const ICON_MARGIN = 20
 
+const DEFAULT_APPEARANCE = {
+  mode: 'dark',
+  accent: 'ocean',
+  wallpaper: 'architect'
+}
+
+const ACCENT_THEMES = {
+  ocean: {
+    accent: '#67e8f9',
+    accentStrong: '#22d3ee',
+    accentSoft: 'rgba(34, 211, 238, 0.16)',
+    accentMuted: 'rgba(34, 211, 238, 0.3)',
+    highlight: '#fbbf24'
+  },
+  ember: {
+    accent: '#fb923c',
+    accentStrong: '#f97316',
+    accentSoft: 'rgba(249, 115, 22, 0.18)',
+    accentMuted: 'rgba(249, 115, 22, 0.34)',
+    highlight: '#22d3ee'
+  },
+  forest: {
+    accent: '#4ade80',
+    accentStrong: '#22c55e',
+    accentSoft: 'rgba(34, 197, 94, 0.16)',
+    accentMuted: 'rgba(34, 197, 94, 0.32)',
+    highlight: '#f59e0b'
+  }
+}
+
+const WALLPAPER_THEMES = {
+  architect: {
+    overlay:
+      'radial-gradient(circle at 18% 18%, rgba(103, 232, 249, 0.22), transparent 28%), radial-gradient(circle at 85% 12%, rgba(251, 191, 36, 0.14), transparent 24%), linear-gradient(140deg, rgba(3, 7, 18, 0.38), rgba(8, 15, 29, 0.72))',
+    pattern:
+      'linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px)'
+  },
+  studio: {
+    overlay:
+      'radial-gradient(circle at 12% 24%, rgba(244, 114, 182, 0.14), transparent 30%), radial-gradient(circle at 88% 18%, rgba(103, 232, 249, 0.18), transparent 30%), linear-gradient(160deg, rgba(15, 23, 42, 0.2), rgba(9, 11, 18, 0.78))',
+    pattern:
+      'linear-gradient(120deg, rgba(255,255,255,0.025) 0%, transparent 45%, rgba(255,255,255,0.025) 100%)'
+  },
+  midnight: {
+    overlay:
+      'radial-gradient(circle at 22% 22%, rgba(34, 211, 238, 0.2), transparent 32%), radial-gradient(circle at 82% 16%, rgba(74, 222, 128, 0.12), transparent 26%), linear-gradient(180deg, rgba(6, 11, 25, 0.28), rgba(2, 6, 23, 0.82))',
+    pattern:
+      'linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px), linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px)'
+  }
+}
+
 const APP_DEFINITIONS = {
   Calculator: { component: Calculator, icon: getAssetPath('images/calculator.apng'), allowMultiple: false, sizeMode: 'calculator' },
   Terminal: { component: Terminal, icon: getAssetPath('images/terminal.png'), allowMultiple: false },
@@ -42,12 +94,12 @@ const APP_DEFINITIONS = {
   'File Explorer': { component: FileExplorer, icon: getAssetPath('images/file-explorer.png'), allowMultiple: false },
   'Trash Bin': { component: TrashBin, icon: getAssetPath('images/bin.png'), allowMultiple: false },
   Notes: { component: Notes, icon: getAssetPath('images/note.png'), allowMultiple: true },
-  Projects: { component: Projects, icon: getAssetPath('images/file-explorer.png'), allowMultiple: false, sizeMode: 'portfolio', adaptiveScale: true },
-  Skills: { component: Skills, icon: getAssetPath('images/settings.png'), allowMultiple: false, sizeMode: 'portfolio', adaptiveScale: true },
-  Contact: { component: Contact, icon: getAssetPath('images/note.png'), allowMultiple: false, sizeMode: 'portfolio' },
-  About: { component: About, icon: getAssetPath('images/logo.png'), allowMultiple: false, sizeMode: 'portfolio', adaptiveScale: true },
-  Resume: { component: Resume, icon: getAssetPath('images/note.png'), allowMultiple: false, sizeMode: 'portfolio', adaptiveScale: true },
-  ErrorLog: { component: ErrorLog, icon: getAssetPath('images/settings.png'), allowMultiple: false, sizeMode: 'portfolio', adaptiveScale: true }
+  Projects: { component: Projects, icon: getAssetPath('images/file-explorer.png'), allowMultiple: false, adaptiveScale: true },
+  Skills: { component: Skills, icon: getAssetPath('images/settings.png'), allowMultiple: false, adaptiveScale: true },
+  Contact: { component: Contact, icon: getAssetPath('images/note.png'), allowMultiple: false },
+  About: { component: About, icon: getAssetPath('images/logo.png'), allowMultiple: false, adaptiveScale: true },
+  Resume: { component: Resume, icon: getAssetPath('images/note.png'), allowMultiple: false, adaptiveScale: true },
+  ErrorLog: { component: ErrorLog, icon: getAssetPath('images/settings.png'), allowMultiple: false, adaptiveScale: true }
 }
 
 const APP_LAUNCH_DELAYS = {
@@ -118,39 +170,28 @@ function buildInitialDesktopIcons() {
   })
 }
 
+function getStoredState(key, fallback) {
+  const stored = readStorage(key, fallback)
+  return stored ?? fallback
+}
+
 function App() {
   const [systemState, setSystemState] = useState('boot')
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoggingIn, setIsLoggingIn] = useState(false)
-
   const [notifications, setNotifications] = useState([])
   const [isLocked, setIsLocked] = useState(false)
-  const [theme, setTheme] = useState('dark')
+  const [appearance, setAppearance] = useState(() => getStoredState('appearance', DEFAULT_APPEARANCE))
 
   const { windows, activeWindowId } = useSyncExternalStore(
     (callback) => windowManager.subscribe(callback),
     () => windowManager.getState()
   )
 
-  const [desktopIcons, setDesktopIcons] = useState(() => buildInitialDesktopIcons())
-  const [deletedIcons, setDeletedIcons] = useState([
-    {
-      id: 'dummy-image',
-      label: 'Vacation Photo.jpg',
-      deletedDate: new Date().toLocaleString(),
-      type: 'image'
-    },
-    {
-      id: 'dummy-spreadsheet',
-      label: 'Budget.xlsx',
-      deletedDate: new Date().toLocaleString(),
-      type: 'spreadsheet'
-    }
-  ])
-
+  const [desktopIcons, setDesktopIcons] = useState(() => getStoredState('desktop-icons', buildInitialDesktopIcons()))
+  const [deletedIcons, setDeletedIcons] = useState(() => getStoredState('deleted-icons', []))
   const [showSimplified, setShowSimplified] = useState(false)
   const [mobileWarningAcknowledged, setMobileWarningAcknowledged] = useState(false)
-
   const [currentTime, setCurrentTime] = useState('')
   const [currentDate, setCurrentDate] = useState('')
 
@@ -168,11 +209,11 @@ function App() {
       ...options
     }
 
-    setNotifications(prev => [...prev, notification])
+    setNotifications((prev) => [...prev, notification])
   }, [])
 
   const removeNotification = useCallback((id) => {
-    setNotifications(prev => prev.filter(notification => notification.id !== id))
+    setNotifications((prev) => prev.filter((notification) => notification.id !== id))
   }, [])
 
   const focusWindow = useCallback((id) => {
@@ -203,8 +244,10 @@ function App() {
   }, [])
 
   const handleTaskbarWindowAction = useCallback((id) => {
-    const target = windows.find(w => w.id === id)
-    if (!target) return
+    const target = windows.find((windowState) => windowState.id === id)
+    if (!target) {
+      return
+    }
 
     if (!target.minimized && activeWindowId === id) {
       windowManager.minimizeWindow(id)
@@ -229,7 +272,7 @@ function App() {
     }
 
     if (!definition.allowMultiple) {
-      const existing = windowManager.getWindows().find(window => window.appType === appType)
+      const existing = windowManager.getWindows().find((windowState) => windowState.appType === appType)
       if (existing) {
         windowManager.focusWindow(existing.id)
         return
@@ -237,7 +280,6 @@ function App() {
     }
 
     const launchDelay = APP_LAUNCH_DELAYS[appType] || 100
-
     loadingAppsRef.current.add(appType)
 
     addNotification('system', `Launching ${appType}...`, {
@@ -247,18 +289,22 @@ function App() {
 
     const timerId = window.setTimeout(() => {
       loadingAppsRef.current.delete(appType)
-
       windowManager.openWindow(appType)
-
       launchTimersRef.current.delete(timerId)
     }, launchDelay)
 
     launchTimersRef.current.add(timerId)
-  }, [addNotification, focusWindow])
+  }, [addNotification])
+
+  const updateAppearance = useCallback((partial) => {
+    setAppearance((prev) => ({ ...prev, ...partial }))
+  }, [])
 
   const toggleTheme = useCallback(() => {
-    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'))
-  }, [])
+    updateAppearance({
+      mode: appearance.mode === 'dark' ? 'light' : 'dark'
+    })
+  }, [appearance.mode, updateAppearance])
 
   const lockSystem = useCallback(() => {
     setIsLocked(true)
@@ -287,11 +333,11 @@ function App() {
   }, [addNotification])
 
   const findAvailableDesktopSlot = useCallback((icons) => {
-    const ICON_WIDTH = 80
-    const ICON_HEIGHT = 70
+    const iconWidth = 80
+    const iconHeight = 70
     const bounds = getDesktopBounds()
-    const maxX = bounds.width - ICON_WIDTH - ICON_MARGIN
-    const maxY = bounds.height - ICON_HEIGHT - ICON_MARGIN
+    const maxX = bounds.width - iconWidth - ICON_MARGIN
+    const maxY = bounds.height - iconHeight - ICON_MARGIN
 
     for (let col = 0; col < Math.ceil(bounds.width / ICON_COLUMN_WIDTH); col += 1) {
       for (let row = 0; row < Math.ceil(bounds.height / ICON_ROW_HEIGHT); row += 1) {
@@ -302,8 +348,8 @@ function App() {
           continue
         }
 
-        const occupied = icons.some(icon => (
-          Math.abs(icon.x - candidateX) < ICON_WIDTH && Math.abs(icon.y - candidateY) < ICON_HEIGHT
+        const occupied = icons.some((icon) => (
+          Math.abs(icon.x - candidateX) < iconWidth && Math.abs(icon.y - candidateY) < iconHeight
         ))
 
         if (!occupied) {
@@ -320,9 +366,8 @@ function App() {
     const baseName = isFolder ? 'New Folder' : 'New Text Document'
     const extension = isFolder ? '' : '.txt'
 
-    setDesktopIcons(prev => {
-      const existingLabels = new Set(prev.map(icon => icon.label))
-
+    setDesktopIcons((prev) => {
+      const existingLabels = new Set(prev.map((icon) => icon.label))
       let suffix = 0
       let candidateLabel = `${baseName}${extension}`
 
@@ -354,13 +399,13 @@ function App() {
   }, [addNotification, findAvailableDesktopSlot])
 
   const deleteIcon = useCallback((iconId) => {
-    setDesktopIcons(prev => {
-      const iconToDelete = prev.find(icon => icon.id === iconId)
+    setDesktopIcons((prev) => {
+      const iconToDelete = prev.find((icon) => icon.id === iconId)
       if (!iconToDelete) {
         return prev
       }
 
-      setDeletedIcons(deletedPrev => ([
+      setDeletedIcons((deletedPrev) => ([
         ...deletedPrev,
         {
           ...iconToDelete,
@@ -369,49 +414,47 @@ function App() {
         }
       ]))
 
-      return prev.filter(icon => icon.id !== iconId)
+      return prev.filter((icon) => icon.id !== iconId)
     })
   }, [])
 
   const restoreIcon = useCallback((icon) => {
-    const { deletedDate: _deletedDate, ...desktopIcon } = icon
-    setDesktopIcons(prev => [...prev, desktopIcon])
-    setDeletedIcons(prev => prev.filter(item => item.id !== icon.id))
+    const { deletedDate: deletedDateValue, ...desktopIcon } = icon
+    void deletedDateValue
+    setDesktopIcons((prev) => [...prev, desktopIcon])
+    setDeletedIcons((prev) => prev.filter((item) => item.id !== icon.id))
   }, [])
 
   const deletePermanently = useCallback((icon) => {
-    setDeletedIcons(prev => prev.filter(item => item.id !== icon.id))
+    setDeletedIcons((prev) => prev.filter((item) => item.id !== icon.id))
   }, [])
 
   const updateIconPosition = useCallback((iconId, x, y) => {
-    setDesktopIcons(prev => {
-      const movedIconIndex = prev.findIndex(icon => icon.id === iconId)
+    setDesktopIcons((prev) => {
+      const movedIconIndex = prev.findIndex((icon) => icon.id === iconId)
       if (movedIconIndex === -1) {
         return prev
       }
 
-      const ICON_WIDTH = 80
-      const ICON_HEIGHT = 70
+      const iconWidth = 80
+      const iconHeight = 70
       const bounds = getDesktopBounds()
 
       const snapX = Math.round((x - ICON_MARGIN) / ICON_COLUMN_WIDTH) * ICON_COLUMN_WIDTH + ICON_MARGIN
       const snapY = Math.round((y - ICON_MARGIN) / ICON_ROW_HEIGHT) * ICON_ROW_HEIGHT + ICON_MARGIN
 
-      const maxX = bounds.width - ICON_WIDTH - ICON_MARGIN
-      const maxY = bounds.height - ICON_HEIGHT - ICON_MARGIN
+      const maxX = bounds.width - iconWidth - ICON_MARGIN
+      const maxY = bounds.height - iconHeight - ICON_MARGIN
 
       let targetX = Math.max(ICON_MARGIN, Math.min(snapX, maxX))
       let targetY = Math.max(ICON_MARGIN, Math.min(snapY, maxY))
 
-      const overlaps = prev.some(icon => {
+      const overlaps = prev.some((icon) => {
         if (icon.id === iconId) {
           return false
         }
 
-        const overlapX = Math.abs(icon.x - targetX) < ICON_WIDTH
-        const overlapY = Math.abs(icon.y - targetY) < ICON_HEIGHT
-
-        return overlapX && overlapY
+        return Math.abs(icon.x - targetX) < iconWidth && Math.abs(icon.y - targetY) < iconHeight
       })
 
       if (overlaps) {
@@ -424,12 +467,12 @@ function App() {
               continue
             }
 
-            const occupied = prev.some(icon => {
+            const occupied = prev.some((icon) => {
               if (icon.id === iconId) {
                 return false
               }
 
-              return Math.abs(icon.x - candidateX) < ICON_WIDTH && Math.abs(icon.y - candidateY) < ICON_HEIGHT
+              return Math.abs(icon.x - candidateX) < iconWidth && Math.abs(icon.y - candidateY) < iconHeight
             })
 
             if (!occupied) {
@@ -442,29 +485,53 @@ function App() {
         }
       }
 
-      return prev.map(icon => (icon.id === iconId ? { ...icon, x: targetX, y: targetY } : icon))
+      return prev.map((icon) => (icon.id === iconId ? { ...icon, x: targetX, y: targetY } : icon))
     })
   }, [])
 
+  const systemAPI = useMemo(() => ({
+    metadata: SYSTEM_METADATA,
+    appearance,
+    theme: appearance.mode,
+    openWindow,
+    closeWindow,
+    addNotification,
+    toggleTheme,
+    updateAppearance,
+    lockSystem,
+    desktopIcons,
+    deletedIcons
+  }), [appearance, openWindow, closeWindow, addNotification, toggleTheme, updateAppearance, lockSystem, desktopIcons, deletedIcons])
+
   const renderWindowContent = useCallback((windowState) => {
     const Component = windowState.component
+    const componentProps = {
+      systemAPI
+    }
 
-    const componentProps = windowState.appType === 'Settings'
-      ? { theme, toggleTheme }
-      : windowState.appType === 'Trash Bin'
-        ? { deletedIcons, onRestore: restoreIcon, onDeletePermanently: deletePermanently }
-        : {}
+    if (windowState.appType === 'Settings') {
+      componentProps.theme = appearance.mode
+      componentProps.toggleTheme = toggleTheme
+      componentProps.appearance = appearance
+      componentProps.updateAppearance = updateAppearance
+    }
+
+    if (windowState.appType === 'Trash Bin') {
+      componentProps.deletedIcons = deletedIcons
+      componentProps.onRestore = restoreIcon
+      componentProps.onDeletePermanently = deletePermanently
+    }
 
     return (
       <ErrorBoundary>
-        <Suspense fallback={<div style={{ padding: 16, color: '#9CA3AF' }}>Loading...</div>}>
+        <Suspense fallback={<div style={{ padding: 16, color: 'var(--os-text-muted)' }}>Loading...</div>}>
           <Component {...componentProps} />
         </Suspense>
       </ErrorBoundary>
     )
-  }, [deletePermanently, deletedIcons, restoreIcon, theme, toggleTheme])
+  }, [appearance, deletedIcons, deletePermanently, restoreIcon, systemAPI, toggleTheme, updateAppearance])
 
-  const windowsWithChildren = useMemo(() => windows.map(windowState => ({
+  const windowsWithChildren = useMemo(() => windows.map((windowState) => ({
     ...windowState,
     children: renderWindowContent(windowState)
   })), [windows, renderWindowContent])
@@ -473,18 +540,42 @@ function App() {
     if (typeof window !== 'undefined') {
       window.soundManager = soundManager
       soundManager.setVolume(0.3)
-      document.documentElement.style.setProperty(
-        '--os-wallpaper',
-        `url("${getAssetPath('images/wallpaper.png')}")`
-      )
+      document.documentElement.style.setProperty('--os-wallpaper-image', `url("${getAssetPath('images/wallpaper.png')}")`)
     }
 
     const launchTimers = launchTimersRef.current
     return () => {
-      launchTimers.forEach(timerId => window.clearTimeout(timerId))
+      launchTimers.forEach((timerId) => window.clearTimeout(timerId))
       launchTimers.clear()
     }
   }, [])
+
+  useEffect(() => {
+    const accentPalette = ACCENT_THEMES[appearance.accent] || ACCENT_THEMES.ocean
+    const wallpaperPalette = WALLPAPER_THEMES[appearance.wallpaper] || WALLPAPER_THEMES.architect
+    const root = document.documentElement
+
+    root.dataset.theme = appearance.mode
+    root.style.setProperty('--os-accent', accentPalette.accent)
+    root.style.setProperty('--os-accent-strong', accentPalette.accentStrong)
+    root.style.setProperty('--os-accent-soft', accentPalette.accentSoft)
+    root.style.setProperty('--os-accent-muted', accentPalette.accentMuted)
+    root.style.setProperty('--os-highlight', accentPalette.highlight)
+    root.style.setProperty('--os-scene-overlay', wallpaperPalette.overlay)
+    root.style.setProperty('--os-scene-pattern', wallpaperPalette.pattern)
+  }, [appearance])
+
+  useEffect(() => {
+    writeStorage('appearance', appearance)
+  }, [appearance])
+
+  useEffect(() => {
+    writeStorage('desktop-icons', desktopIcons)
+  }, [desktopIcons])
+
+  useEffect(() => {
+    writeStorage('deleted-icons', deletedIcons)
+  }, [deletedIcons])
 
   useEffect(() => {
     const updateDateTime = () => {
@@ -500,21 +591,19 @@ function App() {
 
     updateDateTime()
     const interval = setInterval(updateDateTime, 1000)
-
     return () => clearInterval(interval)
   }, [])
 
   useEffect(() => {
     const handleResizeNow = () => {
       const bounds = getDesktopBounds()
-
       windowManager.handleScreenResize()
 
-      setDesktopIcons(prev => {
+      setDesktopIcons((prev) => {
         const maxX = bounds.width - 80 - ICON_MARGIN
         const maxY = bounds.height - 70 - ICON_MARGIN
 
-        return prev.map(icon => ({
+        return prev.map((icon) => ({
           ...icon,
           x: Math.max(ICON_MARGIN, Math.min(icon.x, maxX)),
           y: Math.max(ICON_MARGIN, Math.min(icon.y, maxY))
@@ -527,12 +616,10 @@ function App() {
       if (resizeRaf) {
         cancelAnimationFrame(resizeRaf)
       }
-
       resizeRaf = requestAnimationFrame(handleResizeNow)
     }
 
     window.addEventListener('resize', handleResize)
-
     return () => {
       window.removeEventListener('resize', handleResize)
       if (resizeRaf) {
@@ -546,14 +633,13 @@ function App() {
       id: 'alt-tab',
       keys: ['Alt', 'Tab'],
       action: () => {
-        const visibleWindows = windows.filter(windowState => !windowState.minimized)
+        const visibleWindows = windows.filter((windowState) => !windowState.minimized)
         if (visibleWindows.length <= 1) {
           return
         }
 
-        const currentIndex = visibleWindows.findIndex(windowState => windowState.id === activeWindowId)
+        const currentIndex = visibleWindows.findIndex((windowState) => windowState.id === activeWindowId)
         const nextIndex = (currentIndex + 1) % visibleWindows.length
-
         focusWindow(visibleWindows[nextIndex].id)
       },
       context: 'global',
@@ -701,7 +787,7 @@ function App() {
     <>
       <OSCursor />
 
-      <div className={`app ${theme}`}>
+      <div className={`app ${appearance.mode}`} data-accent={appearance.accent} data-wallpaper={appearance.wallpaper}>
         <Desktop
           openWindow={openWindow}
           icons={desktopIcons}

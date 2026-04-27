@@ -2,7 +2,6 @@ import { useState, useRef, useCallback, useMemo } from 'react'
 import { theme } from '../../theme'
 import DesktopIcon from './DesktopIcon'
 import WindowFrame from './WindowFrame'
-import { getAssetPath } from '../../utils/assets'
 
 const MENU_ITEMS = [
   { id: 'new-text', label: 'New Text Document' },
@@ -27,7 +26,6 @@ const Desktop = ({
   minimizeWindow,
   activeWindowId,
   addNotification,
-  isFullscreen
 }) => {
   const [selectedIcons, setSelectedIcons] = useState(() => new Set())
   const [selectionRect, setSelectionRect] = useState(null)
@@ -205,15 +203,6 @@ const Desktop = ({
     </WindowFrame>
   )), [windows, activeWindowId, closeWindow, focusWindow, updateWindowPosition, updateWindowSize, toggleMaximizeWindow, minimizeWindow])
 
-  const wallpaperUrl = `url("${getAssetPath('images/wallpaper.png')}")`
-
-  const desktopStyle = {
-    backgroundImage: wallpaperUrl,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundRepeat: 'no-repeat'
-  }
-
   return (
     <div
       className="desktop"
@@ -222,8 +211,7 @@ const Desktop = ({
       onMouseMove={handleDesktopMouseMove}
       onMouseUp={handleDesktopMouseUp}
       onContextMenu={handleDesktopContextMenu}
-      onClick={() => contextMenu && setContextMenu(null)}      
-      style={desktopStyle}
+      onClick={() => contextMenu && setContextMenu(null)}
       role="main"
       aria-label="Desktop workspace"
       tabIndex={0}

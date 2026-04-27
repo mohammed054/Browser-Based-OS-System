@@ -241,13 +241,14 @@ const Taskbar = ({ openWindow, windows, activeWindowId, onWindowAction, addNotif
           >
             <span
               style={{
-                fontSize: '16px',
-                color: soundVolume > 0 ? 'var(--os-cyan, #38bdf8)' : 'rgba(255, 255, 255, 0.5)',
+                fontSize: '11px',
+                fontWeight: 700,
+                color: soundVolume > 0 ? 'var(--os-accent, #38bdf8)' : 'rgba(255, 255, 255, 0.5)',
                 marginRight: '5px',
                 transition: 'all 0.2s'
               }}
             >
-              ??
+              VOL
             </span>
             <input
               type="range"

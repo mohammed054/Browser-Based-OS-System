@@ -1,399 +1,144 @@
-import React, { useState } from 'react';
-import { PROFILE } from '../config/profile';
+import { useEffect, useState } from 'react'
+import { CONTACT_CHANNELS } from '../data/portfolio'
+import { PROFILE } from '../config/profile'
+import { readStorage, writeStorage } from '../utils/storage'
 
-const Contact = () => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    message: '',
-    subject: ''
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState('');
+const EMPTY_DRAFT = {
+  name: '',
+  email: '',
+  subject: '',
+  message: ''
+}
 
-  const contactInfo = {
-    email: PROFILE.email,
-    phone: PROFILE.phone,
-    location: PROFILE.location,
-    linkedin: PROFILE.linkedin,
-    github: PROFILE.github
-  };
+const Contact = ({ systemAPI }) => {
+  const [draft, setDraft] = useState(() => readStorage('contact-draft', EMPTY_DRAFT))
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  useEffect(() => {
+    writeStorage('contact-draft', draft)
+  }, [draft])
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-    // Simulate form submission
-    setTimeout(() => {
-      setSubmitStatus('success');
-      setFormData({ name: '', email: '', message: '', subject: '' });
-      setIsSubmitting(false);
-      
-      // Reset status after 3 seconds
-      setTimeout(() => setSubmitStatus(''), 3000);
-    }, 1500);
-  };
+  const updateField = (key, value) => {
+    setDraft((prev) => ({ ...prev, [key]: value }))
+  }
 
-  const isFormValid = formData.name && formData.email && formData.message;
+  const handleSubmit = (event) => {
+    event.preventDefault()
+
+    const subject = encodeURIComponent(draft.subject || `Hello ${PROFILE.firstName}`)
+    const body = encodeURIComponent([
+      `Name: ${draft.name}`,
+      `Email: ${draft.email}`,
+      '',
+      draft.message
+    ].join('\n'))
+
+    window.location.href = `mailto:${PROFILE.email}?subject=${subject}&body=${body}`
+    systemAPI.addNotification('success', 'Draft opened in your mail app', {
+      title: 'Contact',
+      duration: 2000
+    })
+  }
+
+  const copyValue = async (label, value) => {
+    if (!navigator.clipboard) {
+      return
+    }
+
+    await navigator.clipboard.writeText(value)
+    systemAPI.addNotification('success', `${label} copied`, {
+      title: 'Contact',
+      duration: 1600
+    })
+  }
+
+  const isValid = draft.name.trim() && draft.email.trim() && draft.message.trim()
 
   return (
-    <div style={{ 
-      height: '100%', 
-      padding: '20px',
-      background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-      color: 'white',
-      overflow: 'auto'
-    }}>
-      <div style={{ marginBottom: '30px' }}>
-        <h1 style={{ fontSize: '28px', marginBottom: '10px', color: '#38bdf8' }}>
-          Get In Touch
-        </h1>
-        <p style={{ fontSize: '16px', color: '#94a3b8', lineHeight: '1.5' }}>
-          I'm always interested in hearing about new opportunities and exciting projects.
-          Feel free to reach out!
-        </p>
+    <div className="app-shell">
+      <div className="app-header">
+        <div className="app-title-stack">
+          <div className="app-eyebrow">Reach Out</div>
+          <div className="app-title">Contact</div>
+          <div className="app-subtitle">Use the quick routes or prepare a clean intro email without leaving the OS.</div>
+        </div>
       </div>
 
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: '1fr 1fr', 
-        gap: '30px',
-        maxWidth: '1000px'
-      }}>
-        {/* Contact Information */}
-        <div>
-          <h2 style={{ fontSize: '20px', marginBottom: '20px', color: '#38bdf8' }}>
-            Contact Information
-          </h2>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '15px',
-              padding: '15px',
-              background: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '8px',
-              border: '1px solid rgba(56, 189, 248, 0.2)',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(56, 189, 248, 0.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-            }}>
-              <span style={{ fontSize: '20px' }}>📧</span>
-              <div>
-                <div style={{ fontSize: '14px', color: '#94a3b8' }}>Email</div>
-                <div style={{ fontSize: '16px' }}>{contactInfo.email}</div>
+      <div className="app-main" style={{ display: 'grid', gridTemplateColumns: '0.9fr 1.1fr', gap: 16 }}>
+        <div className="stack">
+          {CONTACT_CHANNELS.map((channel) => (
+            <div key={channel.label} className="panel">
+              <div className="panel-title">{channel.label}</div>
+              <div className="panel-body" style={{ marginBottom: 12 }}>{channel.note}</div>
+              <div className="chip-row">
+                <span className="chip">{channel.value}</span>
+                {channel.href && (
+                  <button
+                    type="button"
+                    className="button secondary"
+                    onClick={() => {
+                      if (channel.href.startsWith('mailto:')) {
+                        window.location.href = channel.href
+                      } else {
+                        window.open(channel.href, '_blank', 'noopener,noreferrer')
+                      }
+                    }}
+                  >
+                    Open
+                  </button>
+                )}
+                <button type="button" className="button secondary" onClick={() => copyValue(channel.label, channel.value)}>
+                  Copy
+                </button>
               </div>
             </div>
-
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '15px',
-              padding: '15px',
-              background: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '8px',
-              border: '1px solid rgba(56, 189, 248, 0.2)',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(56, 189, 248, 0.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-            }}>
-              <span style={{ fontSize: '20px' }}>📱</span>
-              <div>
-                <div style={{ fontSize: '14px', color: '#94a3b8' }}>Phone</div>
-                <div style={{ fontSize: '16px' }}>{contactInfo.phone}</div>
-              </div>
-            </div>
-
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '15px',
-              padding: '15px',
-              background: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '8px',
-              border: '1px solid rgba(56, 189, 248, 0.2)',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(56, 189, 248, 0.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-            }}>
-              <span style={{ fontSize: '20px' }}>📍</span>
-              <div>
-                <div style={{ fontSize: '14px', color: '#94a3b8' }}>Location</div>
-                <div style={{ fontSize: '16px' }}>{contactInfo.location}</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Social Links */}
-          <div style={{ marginTop: '30px' }}>
-            <h3 style={{ fontSize: '18px', marginBottom: '15px', color: '#38bdf8' }}>
-              Social Profiles
-            </h3>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              {[
-                { name: 'LinkedIn', icon: '💼', url: contactInfo.linkedin },
-                { name: 'GitHub', icon: '🐙', url: contactInfo.github }
-              ].map((social) => (
-                <a
-                  key={social.name}
-                  href={`https://${social.url}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '10px 15px',
-                    background: 'rgba(56, 189, 248, 0.2)',
-                    border: '1px solid rgba(56, 189, 248, 0.3)',
-                    borderRadius: '8px',
-                    color: 'white',
-                    textDecoration: 'none',
-                    fontSize: '14px',
-                    transition: 'all 0.3s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(56, 189, 248, 0.3)';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(56, 189, 248, 0.2)';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                >
-                  <span>{social.icon}</span>
-                  <span>{social.name}</span>
-                </a>
-              ))}
-            </div>
-          </div>
+          ))}
         </div>
 
-        {/* Contact Form */}
-        <div>
-          <h2 style={{ fontSize: '20px', marginBottom: '20px', color: '#38bdf8' }}>
-            Send Me a Message
-          </h2>
-          
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <div>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: '5px', 
-                fontSize: '14px', 
-                color: '#94a3b8' 
-              }}>
-                Name *
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                required
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px solid rgba(56, 189, 248, 0.3)',
-                  borderRadius: '8px',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  color: 'white',
-                  fontSize: '14px',
-                  transition: 'all 0.3s ease'
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = '#38bdf8';
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.3)';
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                }}
-              />
-            </div>
+        <form className="panel stack" onSubmit={handleSubmit}>
+          <div className="panel-title">Email draft</div>
+          <div className="panel-body">This creates a real email draft in your default mail app. No fake form submission layer.</div>
 
-            <div>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: '5px', 
-                fontSize: '14px', 
-                color: '#94a3b8' 
-              }}>
-                Email *
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                required
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px solid rgba(56, 189, 248, 0.3)',
-                  borderRadius: '8px',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  color: 'white',
-                  fontSize: '14px',
-                  transition: 'all 0.3s ease'
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = '#38bdf8';
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.3)';
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                }}
-              />
-            </div>
+          <input
+            type="text"
+            className="app-input"
+            placeholder="Your name"
+            value={draft.name}
+            onChange={(event) => updateField('name', event.target.value)}
+          />
+          <input
+            type="email"
+            className="app-input"
+            placeholder="Your email"
+            value={draft.email}
+            onChange={(event) => updateField('email', event.target.value)}
+          />
+          <input
+            type="text"
+            className="app-input"
+            placeholder="Subject"
+            value={draft.subject}
+            onChange={(event) => updateField('subject', event.target.value)}
+          />
+          <textarea
+            className="app-textarea"
+            placeholder="Message"
+            value={draft.message}
+            onChange={(event) => updateField('message', event.target.value)}
+            style={{ minHeight: 220 }}
+          />
 
-            <div>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: '5px', 
-                fontSize: '14px', 
-                color: '#94a3b8' 
-              }}>
-                Subject
-              </label>
-              <input
-                type="text"
-                name="subject"
-                value={formData.subject}
-                onChange={handleInputChange}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px solid rgba(56, 189, 248, 0.3)',
-                  borderRadius: '8px',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  color: 'white',
-                  fontSize: '14px',
-                  transition: 'all 0.3s ease'
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = '#38bdf8';
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.3)';
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                }}
-              />
-            </div>
-
-            <div>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: '5px', 
-                fontSize: '14px', 
-                color: '#94a3b8' 
-              }}>
-                Message *
-              </label>
-              <textarea
-                name="message"
-                value={formData.message}
-                onChange={handleInputChange}
-                required
-                rows={5}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px solid rgba(56, 189, 248, 0.3)',
-                  borderRadius: '8px',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  color: 'white',
-                  fontSize: '14px',
-                  resize: 'vertical',
-                  fontFamily: 'inherit',
-                  transition: 'all 0.3s ease'
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = '#38bdf8';
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.3)';
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                }}
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={!isFormValid || isSubmitting}
-              style={{
-                padding: '12px 24px',
-                border: 'none',
-                borderRadius: '8px',
-                background: isFormValid && !isSubmitting 
-                  ? '#38bdf8' 
-                  : 'rgba(56, 189, 248, 0.3)',
-                color: 'white',
-                fontSize: '16px',
-                fontWeight: 'bold',
-                cursor: isFormValid && !isSubmitting ? 'pointer' : 'not-allowed',
-                transition: 'all 0.3s ease',
-                opacity: isFormValid && !isSubmitting ? 1 : 0.6
-              }}
-              onMouseEnter={(e) => {
-                if (isFormValid && !isSubmitting) {
-                  e.currentTarget.style.background = '#0ea5e9';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (isFormValid && !isSubmitting) {
-                  e.currentTarget.style.background = '#38bdf8';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }
-              }}
-            >
-              {isSubmitting ? 'Sending...' : 'Send Message'}
+          <div className="button-row">
+            <button type="submit" className="button" disabled={!isValid}>
+              Open email draft
             </button>
-
-            {submitStatus === 'success' && (
-              <div style={{
-                padding: '12px',
-                background: 'rgba(16, 185, 129, 0.2)',
-                border: '1px solid rgba(16, 185, 129, 0.3)',
-                borderRadius: '8px',
-                color: '#10b981',
-                fontSize: '14px',
-                textAlign: 'center'
-              }}>
-                ✅ Message sent successfully! I'll get back to you soon.
-              </div>
-            )}
-          </form>
-        </div>
+            <button type="button" className="button ghost" onClick={() => setDraft(EMPTY_DRAFT)}>
+              Clear
+            </button>
+          </div>
+        </form>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Contact;
-
+export default Contact

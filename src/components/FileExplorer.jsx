@@ -1,172 +1,420 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react'
+import { createDefaultExplorerTree } from '../data/portfolio'
+import { readStorage, writeStorage } from '../utils/storage'
 
-const FileExplorer = () => {
-  const [currentPath, setCurrentPath] = useState('Home');
-  const [selectedFiles, setSelectedFiles] = useState([]);
-  const [clipboard, setClipboard] = useState(null);
+function cloneNode(node) {
+  return {
+    ...node,
+    children: node.children ? node.children.map(cloneNode) : []
+  }
+}
 
-  // Mock file system structure
-  const fileSystem = {
-    'Home': [
-      { icon: '📁', name: 'Documents', size: '2.1 GB', type: 'folder' },
-      { icon: '📁', name: 'Downloads', size: '1.8 GB', type: 'folder' },
-      { icon: '📁', name: 'Pictures', size: '5.2 GB', type: 'folder' },
-      { icon: '📁', name: 'Videos', size: '12.4 GB', type: 'folder' },
-      { icon: '📁', name: 'Music', size: '3.7 GB', type: 'folder' },
-    ],
-    'Documents': [
-      { icon: '📄', name: 'readme.txt', size: '2 KB', type: 'file' },
-      { icon: '📄', name: 'report.docx', size: '1.2 MB', type: 'file' },
-      { icon: '📄', name: 'notes.txt', size: '5 KB', type: 'file' },
-    ],
-    'Downloads': [
-      { icon: '📦', name: 'setup.exe', size: '45 MB', type: 'file' },
-      { icon: '📄', name: 'manual.pdf', size: '8.5 MB', type: 'file' },
-    ],
-    'Pictures': [
-      { icon: '🖼️', name: 'vacation.jpg', size: '2.3 MB', type: 'file' },
-      { icon: '🖼️', name: 'family.png', size: '1.8 MB', type: 'file' },
-    ],
-    'Videos': [
-      { icon: '🎥', name: 'movie.mp4', size: '1.2 GB', type: 'file' },
-    ],
-    'Music': [
-      { icon: '🎵', name: 'song.mp3', size: '5 MB', type: 'file' },
-    ],
-    'Desktop': [
-      { icon: '📄', name: 'shortcut.lnk', size: '1 KB', type: 'file' },
-    ],
-    'C:': [
-      { icon: '📁', name: 'Windows', size: '15 GB', type: 'folder' },
-      { icon: '📁', name: 'Program Files', size: '25 GB', type: 'folder' },
-      { icon: '📁', name: 'Users', size: '50 GB', type: 'folder' },
-    ],
-    'D:': [
-      { icon: '📁', name: 'Data', size: '100 GB', type: 'folder' },
-      { icon: '📁', name: 'Backup', size: '200 GB', type: 'folder' },
-    ],
-  };
+function findNode(root, id, path = []) {
+  if (root.id === id) {
+    return {
+      node: root,
+      path: [...path, root]
+    }
+  }
 
-  const navigationItems = [
-    { icon: '🏠', name: 'Home', path: 'Home' },
-    { icon: '📂', name: 'Desktop', path: 'Desktop' },
-    { icon: '📁', name: 'Documents', path: 'Documents' },
-    { icon: '📥', name: 'Downloads', path: 'Downloads' },
-    { icon: '💽', name: 'Local Disk (C:)', path: 'C:' },
-    { icon: '💽', name: 'Local Disk (D:)', path: 'D:' },
-  ];
+  if (root.type !== 'folder') {
+    return null
+  }
 
-  const getCurrentFiles = () => {
-    return fileSystem[currentPath] || [];
-  };
+  for (const child of root.children) {
+    const result = findNode(child, id, [...path, root])
+    if (result) {
+      return result
+    }
+  }
 
-  const handleNavClick = (path) => {
-    setCurrentPath(path);
-    setSelectedFiles([]);
-  };
+  return null
+}
 
-  const handleFileClick = (fileName, event) => {
-    if (event.ctrlKey || event.metaKey) {
-      // Multi-select with Ctrl/Cmd
-      setSelectedFiles(prev =>
-        prev.includes(fileName)
-          ? prev.filter(f => f !== fileName)
-          : [...prev, fileName]
-      );
+function updateNode(root, id, updater) {
+  if (root.id === id) {
+    return updater(cloneNode(root))
+  }
+
+  if (root.type !== 'folder') {
+    return root
+  }
+
+  return {
+    ...root,
+    children: root.children.map((child) => updateNode(child, id, updater))
+  }
+}
+
+function removeNode(root, id) {
+  if (root.type !== 'folder') {
+    return { tree: root, removed: null }
+  }
+
+  let removed = null
+  const nextChildren = []
+
+  for (const child of root.children) {
+    if (child.id === id) {
+      removed = child
+      continue
+    }
+
+    const result = removeNode(child, id)
+    if (result.removed) {
+      removed = result.removed
+      nextChildren.push(result.tree)
     } else {
-      setSelectedFiles([fileName]);
+      nextChildren.push(child)
     }
-  };
+  }
 
-  const handleFileDoubleClick = (file) => {
-    if (file.type === 'folder') {
-      setCurrentPath(file.name);
-      setSelectedFiles([]);
+  return {
+    tree: {
+      ...root,
+      children: nextChildren
+    },
+    removed
+  }
+}
+
+function duplicateNode(node) {
+  return {
+    ...node,
+    id: `${node.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    updatedAt: new Date().toISOString(),
+    children: node.children ? node.children.map(duplicateNode) : []
+  }
+}
+
+function createExplorerId(prefix) {
+  return `${prefix}-${Math.random().toString(36).slice(2, 10)}`
+}
+
+function ensureUniqueName(children, desiredName) {
+  const existingNames = new Set(children.map((child) => child.name.toLowerCase()))
+  if (!existingNames.has(desiredName.toLowerCase())) {
+    return desiredName
+  }
+
+  const lastDotIndex = desiredName.lastIndexOf('.')
+  const hasExtension = lastDotIndex > 0
+  const baseName = hasExtension ? desiredName.slice(0, lastDotIndex) : desiredName
+  const extension = hasExtension ? desiredName.slice(lastDotIndex) : ''
+
+  let counter = 2
+  let candidate = `${baseName} ${counter}${extension}`
+
+  while (existingNames.has(candidate.toLowerCase())) {
+    counter += 1
+    candidate = `${baseName} ${counter}${extension}`
+  }
+
+  return candidate
+}
+
+function formatNodeMeta(node) {
+  if (node.type === 'folder') {
+    return `${node.children.length} item${node.children.length === 1 ? '' : 's'}`
+  }
+
+  if (node.content) {
+    return `${node.content.length} characters`
+  }
+
+  return node.size || '--'
+}
+
+const FileExplorer = ({ systemAPI }) => {
+  const [tree, setTree] = useState(() => readStorage('explorer-tree', createDefaultExplorerTree()))
+  const [currentFolderId, setCurrentFolderId] = useState(() => readStorage('explorer-current-folder', 'workspace-root'))
+  const [selectedId, setSelectedId] = useState(null)
+  const [clipboardNode, setClipboardNode] = useState(null)
+
+  useEffect(() => {
+    writeStorage('explorer-tree', tree)
+  }, [tree])
+
+  useEffect(() => {
+    writeStorage('explorer-current-folder', currentFolderId)
+  }, [currentFolderId])
+
+  const currentFolderResult = findNode(tree, currentFolderId) ?? findNode(tree, 'workspace-root')
+  const currentFolder = currentFolderResult?.node ?? tree
+  const currentPath = currentFolderResult?.path ?? [tree]
+  const selectedNode = selectedId ? findNode(tree, selectedId)?.node ?? null : null
+
+  const shortcuts = useMemo(() => {
+    const portfolio = tree.children.find((child) => child.name === 'Portfolio')
+    const notes = tree.children.find((child) => child.name === 'Notes')
+    const system = tree.children.find((child) => child.name === 'System')
+
+    return [
+      { id: tree.id, label: 'Workspace' },
+      portfolio ? { id: portfolio.id, label: 'Portfolio' } : null,
+      notes ? { id: notes.id, label: 'Notes' } : null,
+      system ? { id: system.id, label: 'System' } : null
+    ].filter(Boolean)
+  }, [tree])
+
+  const createFolder = () => {
+    const nextFolderName = ensureUniqueName(currentFolder.children, 'New Folder')
+    const nextNode = {
+      id: createExplorerId('folder'),
+      name: nextFolderName,
+      type: 'folder',
+      updatedAt: new Date().toISOString(),
+      children: []
     }
-  };
 
-  const handleNewFolder = () => {
-    const newFolderName = `New folder ${getCurrentFiles().filter(f => f.type === 'folder').length + 1}`;
-    // In a real app, this would create a folder
-    // For demo, we'll just show it was clicked
-    alert(`New folder "${newFolderName}" would be created in ${currentPath}`);
-  };
+    setTree((prev) => updateNode(prev, currentFolder.id, (folder) => ({
+      ...folder,
+      children: [...folder.children, nextNode]
+    })))
+    setSelectedId(nextNode.id)
+    systemAPI.addNotification('success', `${nextFolderName} created`, {
+      title: 'Explorer',
+      duration: 1600
+    })
+  }
 
-  const handleCopy = () => {
-    if (selectedFiles.length > 0) {
-      setClipboard({ action: 'copy', files: selectedFiles, from: currentPath });
+  const createFile = () => {
+    const nextName = ensureUniqueName(currentFolder.children, 'draft.md')
+    const nextNode = {
+      id: createExplorerId('file'),
+      name: nextName,
+      type: 'file',
+      extension: 'md',
+      content: '# New draft\n\nStart writing here.',
+      updatedAt: new Date().toISOString()
     }
-  };
 
-  const handlePaste = () => {
-    if (clipboard) {
-      alert(`${clipboard.action === 'copy' ? 'Copied' : 'Cut'} ${clipboard.files.length} item(s) would be pasted here`);
-      // In a real app, this would move/copy files
-    }
-  };
+    setTree((prev) => updateNode(prev, currentFolder.id, (folder) => ({
+      ...folder,
+      children: [...folder.children, nextNode]
+    })))
+    setSelectedId(nextNode.id)
+    systemAPI.addNotification('success', `${nextName} created`, {
+      title: 'Explorer',
+      duration: 1600
+    })
+  }
 
-  const handleDelete = () => {
-    if (selectedFiles.length > 0) {
-      alert(`${selectedFiles.length} item(s) would be deleted`);
-      // In a real app, this would delete files
+  const renameSelected = () => {
+    if (!selectedNode) {
+      return
     }
-  };
+
+    const proposedName = window.prompt('Rename item', selectedNode.name)
+    if (!proposedName || proposedName.trim() === selectedNode.name) {
+      return
+    }
+
+    const uniqueName = ensureUniqueName(currentFolder.children.filter((child) => child.id !== selectedNode.id), proposedName.trim())
+    setTree((prev) => updateNode(prev, selectedNode.id, (node) => ({
+      ...node,
+      name: uniqueName,
+      updatedAt: new Date().toISOString()
+    })))
+  }
+
+  const deleteSelected = () => {
+    if (!selectedNode || selectedNode.id === tree.id) {
+      return
+    }
+
+    setTree((prev) => removeNode(prev, selectedNode.id).tree)
+    setSelectedId(null)
+    systemAPI.addNotification('system', `${selectedNode.name} deleted`, {
+      title: 'Explorer',
+      duration: 1600
+    })
+  }
+
+  const copySelected = () => {
+    if (!selectedNode) {
+      return
+    }
+
+    setClipboardNode(duplicateNode(selectedNode))
+    systemAPI.addNotification('success', `${selectedNode.name} copied`, {
+      title: 'Explorer',
+      duration: 1600
+    })
+  }
+
+  const pasteIntoCurrentFolder = () => {
+    if (!clipboardNode || currentFolder.type !== 'folder') {
+      return
+    }
+
+    const nextNode = duplicateNode(clipboardNode)
+    nextNode.name = ensureUniqueName(currentFolder.children, nextNode.name)
+
+    setTree((prev) => updateNode(prev, currentFolder.id, (folder) => ({
+      ...folder,
+      children: [...folder.children, nextNode]
+    })))
+    setSelectedId(nextNode.id)
+  }
+
+  const handleItemOpen = (node) => {
+    if (node.type === 'folder') {
+      setCurrentFolderId(node.id)
+      setSelectedId(null)
+      return
+    }
+
+    setSelectedId(node.id)
+  }
 
   return (
-    <div className="file-explorer-app">
-      <div className="explorer-toolbar">
-        <div className="toolbar-button" title="New folder" onClick={handleNewFolder}>📁 New</div>
-        <div className="toolbar-button" title="Copy" onClick={handleCopy}>📋 Copy</div>
-        <div className="toolbar-button" title="Paste" onClick={handlePaste}>📄 Paste</div>
-        <div className="toolbar-button" title="Delete" onClick={handleDelete}>🗑️ Delete</div>
-      </div>
-      <div className="explorer-main">
-        <div className="explorer-nav">
-          <h4>Quick access</h4>
-          {navigationItems.slice(0, 4).map((item, index) => (
-            <div
-              key={index}
-              className={`nav-item ${currentPath === item.path ? 'active' : ''}`}
-              onClick={() => handleNavClick(item.path)}
-            >
-              <span className="nav-icon">{item.icon}</span>
-              {item.name}
-            </div>
-          ))}
-          <h4>This PC</h4>
-          {navigationItems.slice(4).map((item, index) => (
-            <div
-              key={index + 4}
-              className={`nav-item ${currentPath === item.path ? 'active' : ''}`}
-              onClick={() => handleNavClick(item.path)}
-            >
-              <span className="nav-icon">{item.icon}</span>
-              {item.name}
-            </div>
-          ))}
+    <div className="app-shell">
+      <div className="app-header">
+        <div className="app-title-stack">
+          <div className="app-eyebrow">Workspace</div>
+          <div className="app-title">File Explorer</div>
+          <div className="app-subtitle">A persistent project workspace for portfolio docs, notes, and system files.</div>
         </div>
-        <div className="explorer-content">
-          <div className="address-bar">
-            <span>📁 {currentPath}</span>
+
+        <div className="button-row">
+          <button type="button" className="button" onClick={createFolder}>
+            New folder
+          </button>
+          <button type="button" className="button secondary" onClick={createFile}>
+            New file
+          </button>
+          <button type="button" className="button secondary" onClick={copySelected} disabled={!selectedNode}>
+            Copy
+          </button>
+          <button type="button" className="button secondary" onClick={pasteIntoCurrentFolder} disabled={!clipboardNode}>
+            Paste
+          </button>
+          <button type="button" className="button secondary" onClick={renameSelected} disabled={!selectedNode}>
+            Rename
+          </button>
+          <button type="button" className="button danger" onClick={deleteSelected} disabled={!selectedNode}>
+            Delete
+          </button>
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '220px minmax(0, 1.2fr) minmax(280px, 0.8fr)',
+          minHeight: 0,
+          flex: 1
+        }}
+      >
+        <aside className="app-sidebar" style={{ borderRight: '1px solid var(--os-border)' }}>
+          <div className="panel" style={{ marginBottom: 14 }}>
+            <div className="panel-title">Quick access</div>
+            <div className="stack" style={{ gap: 8 }}>
+              {shortcuts.map((shortcut) => (
+                <button
+                  key={shortcut.id}
+                  type="button"
+                  className={`segmented-button ${currentFolderId === shortcut.id ? 'active' : ''}`}
+                  style={{ textAlign: 'left', justifyContent: 'flex-start' }}
+                  onClick={() => {
+                    setCurrentFolderId(shortcut.id)
+                    setSelectedId(null)
+                  }}
+                >
+                  {shortcut.label}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="file-grid">
-            {getCurrentFiles().map((item, index) => (
-              <div
-                key={index}
-                className={`file-item ${selectedFiles.includes(item.name) ? 'selected' : ''}`}
-                onClick={(e) => handleFileClick(item.name, e)}
-                onDoubleClick={() => handleFileDoubleClick(item)}
+
+          <div className="panel">
+            <div className="panel-title">Current path</div>
+            <div className="panel-body">{currentPath.map((segment) => segment.name).join(' / ')}</div>
+          </div>
+        </aside>
+
+        <main className="app-main" style={{ borderRight: '1px solid var(--os-border)' }}>
+          <div className="chip-row" style={{ marginBottom: 16 }}>
+            {currentPath.map((segment) => (
+              <button
+                key={segment.id}
+                type="button"
+                className={`chip ${segment.id === currentFolder.id ? 'active' : ''}`}
+                onClick={() => {
+                  setCurrentFolderId(segment.id)
+                  setSelectedId(null)
+                }}
               >
-                <div className="file-icon">{item.icon}</div>
-                <div className="file-name">{item.name}</div>
-                <div className="file-size">{item.size}</div>
-              </div>
+                {segment.name}
+              </button>
             ))}
           </div>
-        </div>
+
+          <div className="list-table">
+            {currentFolder.children.length === 0 ? (
+              <div className="empty-state">
+                <div className="app-title" style={{ fontSize: '18px' }}>This folder is empty</div>
+                <div className="muted">Create a new folder or file to start expanding the workspace.</div>
+              </div>
+            ) : (
+              currentFolder.children.map((node) => (
+                <button
+                  key={node.id}
+                  type="button"
+                  className={`list-row ${selectedNode?.id === node.id ? 'active' : ''}`}
+                  style={{ textAlign: 'left' }}
+                  onClick={() => setSelectedId(node.id)}
+                  onDoubleClick={() => handleItemOpen(node)}
+                >
+                  <div>
+                    <div className="list-title">{node.type === 'folder' ? 'Folder' : 'File'} - {node.name}</div>
+                    <div className="list-copy">{formatNodeMeta(node)}</div>
+                  </div>
+                  <div className="section-label">
+                    {new Date(node.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        </main>
+
+        <aside className="app-main">
+          {!selectedNode ? (
+            <div className="empty-state">
+              <div className="app-title" style={{ fontSize: '18px' }}>Select an item</div>
+              <div className="muted">Preview metadata and contents here.</div>
+            </div>
+          ) : (
+            <div className="stack">
+              <div className="panel">
+                <div className="panel-title">{selectedNode.name}</div>
+                <div className="chip-row" style={{ marginBottom: 10 }}>
+                  <span className="chip">{selectedNode.type}</span>
+                  <span className="chip">{formatNodeMeta(selectedNode)}</span>
+                </div>
+                <div className="panel-body">
+                  Updated {new Date(selectedNode.updatedAt).toLocaleString()}
+                </div>
+              </div>
+
+              <div className="panel" style={{ minHeight: 280 }}>
+                <div className="panel-title">Preview</div>
+                {selectedNode.type === 'folder' ? (
+                  <div className="panel-body">
+                    This folder contains {selectedNode.children.length} item{selectedNode.children.length === 1 ? '' : 's'}.
+                  </div>
+                ) : (
+                  <div className="code-block">{selectedNode.content || 'Empty file'}</div>
+                )}
+              </div>
+            </div>
+          )}
+        </aside>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default FileExplorer;
+export default FileExplorer

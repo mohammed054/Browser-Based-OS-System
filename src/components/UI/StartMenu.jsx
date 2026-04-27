@@ -111,7 +111,7 @@ const StartMenu = ({ isOpen, onClose, openWindow, searchTerm, setSearchTerm, add
         <div className="avatar">{PROFILE.initials}</div>
         <div className="user-info">
           <div className="name">{PROFILE.name}</div>
-          <div className="title">Web OS Engineer</div>
+          <div className="title">{PROFILE.title}</div>
         </div>
       </div>
 

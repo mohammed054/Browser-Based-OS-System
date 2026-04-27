@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { theme } from '../../theme';
 
 /**
@@ -22,7 +22,6 @@ const DesktopIcon = ({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [currentPosition, setCurrentPosition] = useState({ x, y });
-  const iconRef = useRef(null);
 
   const handleDoubleClick = (e) => {
     e.stopPropagation();
@@ -131,25 +130,6 @@ const DesktopIcon = ({
     }
   };
 
-  const iconStyle = {
-    position: 'absolute',
-    left: isDragging ? currentPosition.x : x,
-    top: isDragging ? currentPosition.y : y,
-    width: theme.dimensions.iconSize,
-    height: theme.dimensions.iconSize,
-    cursor: 'pointer',
-    transition: theme.animations.hover,
-    transform: isDragging ? 'scale(1.1)' : (isSelected ? 'scale(1.05)' : 'scale(1)'),
-    filter: isSelected 
-      ? `drop-shadow(0 0 12px ${theme.colors.accentPrimary}) brightness(1.2)` 
-      : 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))',
-    zIndex: isDragging ? theme.zIndex.windowDragging : theme.zIndex.desktop,
-    borderRadius: '8px',
-    padding: '4px',
-    backgroundColor: isSelected ? 'rgba(56, 189, 248, 0.1)' : 'transparent',
-    border: isSelected ? `2px solid ${theme.colors.accentPrimary}` : '2px solid transparent'
-  };
-
   const labelStyle = {
     position: 'absolute',
     top: `${parseInt(theme.dimensions.iconSize) + 8}px`,
@@ -178,8 +158,8 @@ const DesktopIcon = ({
       className={`desktop-icon ${isSelected ? 'selected' : ''}`}
       style={{
         position: 'absolute',
-        left: x,
-        top: y,
+        left: isDragging ? currentPosition.x : x,
+        top: isDragging ? currentPosition.y : y,
         width: theme.dimensions.iconSize,
         height: theme.dimensions.iconSize,
         display: 'flex',
@@ -188,7 +168,7 @@ const DesktopIcon = ({
         justifyContent: 'flex-start',
         gap: theme.spacing.xs,
         cursor: 'pointer',
-        zIndex: isSelected ? theme.zIndex.overlay : theme.zIndex.icon,
+        zIndex: isDragging ? theme.zIndex.windowDragging : (isSelected ? theme.zIndex.overlay : theme.zIndex.icon),
         userSelect: 'none'
       }}
       onDoubleClick={handleDoubleClick}
@@ -215,8 +195,9 @@ const DesktopIcon = ({
           width: '100%',
           height: '100%',
           objectFit: 'contain',
-          filter: isSelected ? 'brightness(1.2)' : 'none',
-          transition: 'filter 150ms ease-in-out'
+          filter: isSelected ? 'brightness(1.15)' : 'none',
+          transition: 'filter 150ms ease-in-out, transform 150ms ease-in-out',
+          transform: isDragging ? 'scale(1.08)' : 'scale(1)'
         }}
       />
       <div style={labelStyle}>{label}</div>

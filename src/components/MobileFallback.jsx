@@ -1,406 +1,252 @@
-import React, { useState, useEffect } from 'react';
-import { PROFILE } from '../config/profile';
+import React, { useEffect, useMemo, useState } from 'react'
+import { PROFILE } from '../config/profile'
+import { CONTACT_CHANNELS, PROJECTS, SKILL_GROUPS, SYSTEM_METADATA } from '../data/portfolio'
 
-/**
- * Mobile Fallback Component
- * Detects mobile devices and provides simplified portfolio experience
- */
 const MobileFallback = ({ onContinue, onSimplified }) => {
-  const [isMobile, setIsMobile] = useState(false);
-  const [showMessage, setShowMessage] = useState(false);
+  const [isMobile, setIsMobile] = useState(false)
+  const [showMessage, setShowMessage] = useState(false)
 
   useEffect(() => {
     const checkMobile = () => {
-      const isMobileDevice = (
+      const mobileDevice = (
         /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
         window.innerWidth < 768 ||
         'ontouchstart' in window
-      );
-      
-      setIsMobile(isMobileDevice);
-      
-      // Show message after a short delay on mobile
-      if (isMobileDevice) {
-        setTimeout(() => setShowMessage(true), 2000);
+      )
+
+      setIsMobile(mobileDevice)
+      if (mobileDevice) {
+        setTimeout(() => setShowMessage(true), 1200)
       }
-    };
+    }
 
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
-  if (!isMobile || !showMessage) return null;
+  if (!isMobile || !showMessage) {
+    return null
+  }
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100vw',
-      height: '100vh',
-      background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%)',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 999999,
-      padding: '20px',
-      textAlign: 'center',
-      color: 'white',
-      fontFamily: 'var(--font-ui, system-ui, sans-serif)'
-    }}>
-      {/* Icon */}
-      <div style={{
-        width: '80px',
-        height: '80px',
-        background: 'linear-gradient(135deg, var(--os-cyan, #38bdf8), var(--os-cyan-hover, rgba(56, 189, 248, 0.2)))',
-        borderRadius: '20px',
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'linear-gradient(160deg, #07111f 0%, #111827 100%)',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: '40px',
-        marginBottom: '20px',
-        animation: 'mobile-bounce 2s infinite'
-      }}>
-        📱
+        zIndex: 999999,
+        padding: 20,
+        textAlign: 'center',
+        color: 'white',
+        fontFamily: 'var(--font-ui, system-ui, sans-serif)'
+      }}
+    >
+      <div
+        style={{
+          width: 82,
+          height: 82,
+          borderRadius: 22,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 36,
+          marginBottom: 20,
+          background: 'linear-gradient(135deg, #38bdf8, #f59e0b)',
+          boxShadow: '0 16px 36px rgba(56, 189, 248, 0.25)'
+        }}
+      >
+        OS
       </div>
 
-      {/* Title */}
-      <h1 style={{
-        fontSize: '24px',
-        fontWeight: 'bold',
-        margin: '0 0 10px 0',
-        background: 'linear-gradient(45deg, #38bdf8, #a855f7)',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-        backgroundClip: 'text'
-      }}>
+      <h1
+        style={{
+          fontSize: 26,
+          fontWeight: 700,
+          margin: '0 0 8px 0',
+          background: 'linear-gradient(45deg, #38bdf8, #f59e0b)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text'
+        }}
+      >
         {PROFILE.firstName}OS
       </h1>
 
-      <p style={{
-        fontSize: '16px',
-        margin: '0 0 20px 0',
-        color: 'rgba(255, 255, 255, 0.9)',
-        lineHeight: '1.4'
-      }}>
+      <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.86)', marginBottom: 18 }}>
         Best experienced on desktop
       </p>
 
-      {/* Message */}
-      <div style={{
-        background: 'rgba(255, 255, 255, 0.1)',
-        border: '1px solid rgba(255, 255, 255, 0.2)',
-        borderRadius: '12px',
-        padding: '20px',
-        marginBottom: '30px',
-        maxWidth: '400px'
-      }}>
-        <p style={{
-          margin: '0 0 15px 0',
-          fontSize: '14px',
-          lineHeight: '1.5',
-          color: 'rgba(255, 255, 255, 0.8)'
-        }}>
-          This interactive OS-style portfolio requires keyboard, mouse, and a larger screen for the full experience.
+      <div
+        style={{
+          maxWidth: 420,
+          padding: 20,
+          borderRadius: 18,
+          background: 'rgba(255,255,255,0.08)',
+          border: '1px solid rgba(255,255,255,0.12)',
+          marginBottom: 28
+        }}
+      >
+        <p style={{ lineHeight: 1.5, fontSize: 14, color: 'rgba(255,255,255,0.82)' }}>
+          This portfolio behaves like an operating environment. The full version depends on keyboard shortcuts,
+          precise mouse interaction, and overlapping windows.
         </p>
-        
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'auto 1fr',
-          gap: '10px',
-          fontSize: '12px',
-          textAlign: 'left',
-          color: 'rgba(255, 255, 255, 0.6)'
-        }}>
-          <div>⌨️</div>
-          <div>Keyboard shortcuts (Ctrl+Space, Alt+Tab)</div>
-          <div>🖱️</div>
-          <div>Precise mouse interactions</div>
-          <div>🖼️</div>
-          <div>Window management system</div>
-          <div>🎮</div>
-          <div>Interactive Easter eggs</div>
-        </div>
       </div>
 
-      {/* Options */}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '15px',
-        width: '100%',
-        maxWidth: '300px'
-      }}>
+      <div style={{ display: 'grid', gap: 14, width: '100%', maxWidth: 320 }}>
         <button
           onClick={onContinue}
           style={{
-            background: 'linear-gradient(135deg, var(--os-cyan, #38bdf8), var(--os-cyan-hover, rgba(56, 189, 248, 0.2)))',
+            padding: '14px 18px',
+            borderRadius: 14,
             border: 'none',
-            borderRadius: '12px',
-            padding: '15px 20px',
-            fontSize: '16px',
-            fontWeight: 'bold',
+            background: 'linear-gradient(135deg, #38bdf8, #0ea5e9)',
             color: 'white',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-            boxShadow: '0 4px 15px rgba(56, 189, 248, 0.3)'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 6px 20px rgba(56, 189, 248, 0.4)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 4px 15px rgba(56, 189, 248, 0.3)';
+            fontSize: 16,
+            fontWeight: 700,
+            cursor: 'pointer'
           }}
         >
-          Try Anyway 🚀
+          Try anyway
         </button>
 
         <button
           onClick={onSimplified}
           style={{
+            padding: '14px 18px',
+            borderRadius: 14,
+            border: '1px solid rgba(255,255,255,0.22)',
             background: 'transparent',
-            border: '1px solid rgba(255, 255, 255, 0.3)',
-            borderRadius: '12px',
-            padding: '15px 20px',
-            fontSize: '14px',
-            color: 'rgba(255, 255, 255, 0.8)',
-            cursor: 'pointer',
-            transition: 'all 0.2s'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'transparent';
-            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+            color: 'rgba(255,255,255,0.84)',
+            fontSize: 14,
+            cursor: 'pointer'
           }}
         >
-          View Simplified Portfolio 📄
+          View simplified portfolio
         </button>
       </div>
-
-      {/* Footer */}
-      <div style={{
-        position: 'absolute',
-        bottom: '20px',
-        fontSize: '12px',
-        color: 'rgba(255, 255, 255, 0.5)'
-      }}>
-        💡 Tip: Come back on desktop for the full experience!
-      </div>
-
-      {/* Animations */}
-      <style>{`
-        @keyframes mobile-bounce {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
-        }
-      `}</style>
     </div>
-  );
-};
+  )
+}
 
-/**
- * Simplified Portfolio Component
- * Mobile-friendly version of the portfolio
- */
 const SimplifiedPortfolio = ({ onClose }) => {
+  const mobileSkills = useMemo(() => SKILL_GROUPS.flatMap((group) => group.skills).slice(0, 6), [])
+
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100vw',
-      height: '100vh',
-      background: '#0a0a0a',
-      color: 'white',
-      overflow: 'auto',
-      padding: '20px',
-      fontFamily: 'var(--font-ui, system-ui, sans-serif)',
-      zIndex: 999998
-    }}>
-      {/* Header */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '30px'
-      }}>
-        <h1 style={{
-          fontSize: '24px',
-          margin: 0,
-          background: 'linear-gradient(45deg, #38bdf8, #a855f7)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text'
-        }}>
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: '#07111f',
+        color: 'white',
+        overflow: 'auto',
+        padding: 20,
+        fontFamily: 'var(--font-ui, system-ui, sans-serif)',
+        zIndex: 999998
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 }}>
+        <h1
+          style={{
+            fontSize: 24,
+            margin: 0,
+            background: 'linear-gradient(45deg, #38bdf8, #f59e0b)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}
+        >
           {PROFILE.name}
         </h1>
         <button
           onClick={onClose}
           style={{
-            width: '40px',
-            height: '40px',
+            width: 40,
+            height: 40,
             borderRadius: '50%',
-            border: '1px solid rgba(255, 255, 255, 0.3)',
+            border: '1px solid rgba(255,255,255,0.24)',
             background: 'transparent',
             color: 'white',
-            fontSize: '20px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
+            fontSize: 20,
+            cursor: 'pointer'
           }}
         >
           ×
         </button>
       </div>
 
-      {/* About Section */}
-      <section style={{ marginBottom: '30px' }}>
-        <h2 style={{ fontSize: '20px', marginBottom: '15px', color: '#38bdf8' }}>
-          About Me
-        </h2>
-        <p style={{ lineHeight: '1.6', color: 'rgba(255, 255, 255, 0.9)' }}>
-          Frontend Engineer specializing in React, modern web technologies, and creative UI/UX design. 
-          I build sophisticated user interfaces that blur the line between web and native applications.
-        </p>
+      <section style={{ marginBottom: 28 }}>
+        <h2 style={{ fontSize: 20, marginBottom: 12, color: '#38bdf8' }}>About</h2>
+        <p style={{ lineHeight: 1.6, color: 'rgba(255,255,255,0.86)' }}>{SYSTEM_METADATA.summary}</p>
       </section>
 
-      {/* Skills Section */}
-      <section style={{ marginBottom: '30px' }}>
-        <h2 style={{ fontSize: '20px', marginBottom: '15px', color: '#38bdf8' }}>
-          Technical Skills
-        </h2>
-        <div style={{ display: 'grid', gap: '10px' }}>
-          {[
-            { name: 'React', level: 90 },
-            { name: 'JavaScript', level: 85 },
-            { name: 'TypeScript', level: 75 },
-            { name: 'CSS3', level: 90 },
-            { name: 'Node.js', level: 85 },
-            { name: 'Python', level: 80 }
-          ].map(skill => (
+      <section style={{ marginBottom: 28 }}>
+        <h2 style={{ fontSize: 20, marginBottom: 12, color: '#38bdf8' }}>Skills</h2>
+        <div style={{ display: 'grid', gap: 10 }}>
+          {mobileSkills.map((skill) => (
             <div key={skill.name}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                 <span>{skill.name}</span>
                 <span>{skill.level}%</span>
               </div>
-              <div style={{
-                height: '8px',
-                background: 'rgba(255, 255, 255, 0.1)',
-                borderRadius: '4px',
-                overflow: 'hidden'
-              }}>
-                <div style={{
-                  width: `${skill.level}%`,
-                  height: '100%',
-                  background: 'linear-gradient(90deg, #38bdf8, #a855f7)',
-                  borderRadius: '4px',
-                  transition: 'width 1s ease'
-                }} />
+              <div style={{ height: 8, borderRadius: 999, background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
+                <div
+                  style={{
+                    width: `${skill.level}%`,
+                    height: '100%',
+                    borderRadius: 999,
+                    background: 'linear-gradient(90deg, #38bdf8, #f59e0b)'
+                  }}
+                />
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Projects Section */}
-      <section style={{ marginBottom: '30px' }}>
-        <h2 style={{ fontSize: '20px', marginBottom: '15px', color: '#38bdf8' }}>
-          Featured Projects
-        </h2>
-        <div style={{ display: 'grid', gap: '15px' }}>
-          {[
-            {
-              title: 'Browser-Based OS System',
-              description: 'Interactive OS-style portfolio with window management, apps, and Easter eggs',
-              tech: 'React, CSS3, JavaScript'
-            },
-            {
-              title: 'E-Commerce Platform',
-              description: 'Full-stack shopping solution with payment processing and inventory management',
-              tech: 'React, Node.js, MongoDB'
-            },
-            {
-              title: 'AI Chat Assistant',
-              description: 'Machine learning powered conversational interface with NLP capabilities',
-              tech: 'Python, TensorFlow, React'
-            }
-          ].map((project, index) => (
+      <section style={{ marginBottom: 28 }}>
+        <h2 style={{ fontSize: 20, marginBottom: 12, color: '#38bdf8' }}>Projects</h2>
+        <div style={{ display: 'grid', gap: 14 }}>
+          {PROJECTS.slice(0, 3).map((project) => (
             <div
-              key={index}
+              key={project.id}
               style={{
-                background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: '8px',
-                padding: '15px'
+                padding: 16,
+                borderRadius: 12,
+                border: '1px solid rgba(255,255,255,0.1)',
+                background: 'rgba(255,255,255,0.05)'
               }}
             >
-              <h3 style={{ margin: '0 0 8px 0', color: 'white' }}>
-                {project.title}
-              </h3>
-              <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: 'rgba(255, 255, 255, 0.8)' }}>
-                {project.description}
-              </p>
-              <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)' }}>
-                Tech: {project.tech}
+              <h3 style={{ margin: '0 0 8px 0' }}>{project.title}</h3>
+              <p style={{ margin: '0 0 8px 0', color: 'rgba(255,255,255,0.82)', lineHeight: 1.5 }}>{project.summary}</p>
+              <p style={{ margin: 0, color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>
+                Focus: {project.focus.slice(0, 2).join(', ')}
               </p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Contact Section */}
-      <section style={{ marginBottom: '30px' }}>
-        <h2 style={{ fontSize: '20px', marginBottom: '15px', color: '#38bdf8' }}>
-          Contact
-        </h2>
-        <div style={{ display: 'grid', gap: '10px' }}>
-          {[
-            { icon: '📧', label: 'Email', value: PROFILE.email },
-            { icon: '💼', label: 'LinkedIn', value: PROFILE.linkedin },
-            { icon: '🐙', label: 'GitHub', value: PROFILE.github }
-          ].map((contact, index) => (
-            <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span>{contact.icon}</span>
+      <section style={{ marginBottom: 28 }}>
+        <h2 style={{ fontSize: 20, marginBottom: 12, color: '#38bdf8' }}>Contact</h2>
+        <div style={{ display: 'grid', gap: 10 }}>
+          {CONTACT_CHANNELS.slice(0, 3).map((contact) => (
+            <div key={contact.label} style={{ display: 'flex', gap: 10 }}>
+              <span>•</span>
               <div>
-                <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)' }}>
-                  {contact.label}
-                </div>
-                <div style={{ color: '#38bdf8' }}>
-                  {contact.value}
-                </div>
+                <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>{contact.label}</div>
+                <div style={{ color: '#38bdf8' }}>{contact.value}</div>
               </div>
             </div>
           ))}
         </div>
       </section>
-
-      {/* Footer */}
-      <div style={{
-        textAlign: 'center',
-        padding: '20px 0',
-        borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-        fontSize: '14px',
-        color: 'rgba(255, 255, 255, 0.6)'
-      }}>
-        <p style={{ margin: '0 0 10px 0' }}>
-          🎯 For the full interactive experience, view this portfolio on a desktop computer!
-        </p>
-        <p style={{ margin: 0, fontSize: '12px' }}>
-          Built with React and creative UI engineering
-        </p>
-      </div>
     </div>
-  );
-};
+  )
+}
 
-export { MobileFallback, SimplifiedPortfolio };
-
+export { MobileFallback, SimplifiedPortfolio }

@@ -20,11 +20,13 @@ const keywordMappings = {
   'message': { app: 'Contact', priority: 2, keywords: ['contact', 'email'] },
   'mail': { app: 'Contact', priority: 3, keywords: ['contact', 'email'] },
   
-  'about': { app: 'About', priority: 1, keywords: ['resume', 'info', 'bio'] },
-  'resume': { app: 'About', priority: 2, keywords: ['about', 'cv'] },
+  'about': { app: 'About', priority: 1, keywords: ['profile', 'info', 'bio'] },
+  'resume': { app: 'Resume', priority: 1, keywords: ['profile', 'cv', 'dossier'] },
   'info': { app: 'About', priority: 3, keywords: ['about', 'information'] },
   'bio': { app: 'About', priority: 3, keywords: ['about', 'biography'] },
-  'cv': { app: 'About', priority: 3, keywords: ['about', 'resume'] },
+  'cv': { app: 'Resume', priority: 2, keywords: ['resume', 'profile'] },
+  'dossier': { app: 'Resume', priority: 2, keywords: ['resume', 'profile'] },
+  'profile': { app: 'About', priority: 2, keywords: ['resume', 'about'] },
   'information': { app: 'About', priority: 3, keywords: ['about', 'info'] },
   'biography': { app: 'About', priority: 3, keywords: ['about', 'bio'] },
   
@@ -92,7 +94,7 @@ const keywordMappings = {
 // Available apps for direct matching
 const availableApps = [
   'Projects', 'Skills', 'Contact', 'About', 'Terminal', 'Settings',
-  'Calculator', 'Chrome', 'File Explorer', 'Trash Bin', 'Notes'
+  'Calculator', 'Chrome', 'File Explorer', 'Trash Bin', 'Notes', 'Resume', 'ErrorLog'
 ];
 
 // Fuzzy matching function

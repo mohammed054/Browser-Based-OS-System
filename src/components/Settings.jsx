@@ -1,70 +1,42 @@
-import { useEffect, useState } from 'react'
-import { PROFILE } from '../config/profile'
+import { useEffect, useMemo, useState } from 'react'
+import { SYSTEM_METADATA, SYSTEM_METRICS } from '../data/portfolio'
+import { readStorage, writeStorage } from '../utils/storage'
 
-const NAV_ITEMS = [
-  { id: 'system', label: 'System' },
-  { id: 'personalization', label: 'Personalization' },
-  { id: 'account', label: 'Account' },
-  { id: 'privacy', label: 'Privacy' }
+const TABS = [
+  { id: 'appearance', label: 'Appearance' },
+  { id: 'workflow', label: 'Workflow' },
+  { id: 'session', label: 'Session' }
 ]
 
-const shellStyle = {
-  width: '100%',
-  height: '100%',
-  minHeight: 0,
-  display: 'grid',
-  gridTemplateColumns: '260px minmax(0, 1fr)',
-  background: 'linear-gradient(160deg, #0f172a 0%, #111827 100%)',
-  color: '#e5e7eb'
-}
+const ACCENT_OPTIONS = [
+  { id: 'ocean', label: 'Ocean', color: '#67e8f9' },
+  { id: 'ember', label: 'Ember', color: '#fb923c' },
+  { id: 'forest', label: 'Forest', color: '#4ade80' }
+]
 
-const sidebarStyle = {
-  borderRight: '1px solid rgba(148, 163, 184, 0.2)',
-  padding: '18px 14px',
-  background: 'rgba(2, 6, 23, 0.35)',
-  overflowY: 'auto'
-}
+const WALLPAPER_OPTIONS = [
+  { id: 'architect', label: 'Architect' },
+  { id: 'studio', label: 'Studio' },
+  { id: 'midnight', label: 'Midnight' }
+]
 
-const contentStyle = {
-  minWidth: 0,
-  minHeight: 0,
-  overflowY: 'auto',
-  padding: '18px'
-}
-
-const sectionCardStyle = {
-  border: '1px solid rgba(148, 163, 184, 0.2)',
-  borderRadius: '10px',
-  background: 'rgba(15, 23, 42, 0.6)',
-  padding: '14px',
-  marginBottom: '12px'
-}
-
-const rowStyle = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  gap: '12px',
-  padding: '8px 0',
-  borderBottom: '1px solid rgba(148, 163, 184, 0.15)'
+const DEFAULT_PREFERENCES = {
+  notifications: true,
+  motion: true,
+  focusMode: false
 }
 
 function NavButton({ active, label, onClick }) {
   return (
     <button
       type="button"
+      className={`segmented-button ${active ? 'active' : ''}`}
       onClick={onClick}
       style={{
         width: '100%',
-        border: '1px solid rgba(148, 163, 184, 0.25)',
-        borderRadius: '8px',
-        padding: '9px 11px',
-        background: active ? 'rgba(56, 189, 248, 0.2)' : 'rgba(15, 23, 42, 0.4)',
-        color: '#e5e7eb',
+        justifyContent: 'flex-start',
         textAlign: 'left',
-        marginBottom: '8px',
-        fontSize: '13px',
-        cursor: 'pointer'
+        minHeight: '40px'
       }}
     >
       {label}
@@ -72,78 +44,41 @@ function NavButton({ active, label, onClick }) {
   )
 }
 
-function InfoRow({ label, value, hideBorder = false }) {
+function PreferenceRow({ label, detail, enabled, onToggle }) {
   return (
-    <div style={{ ...rowStyle, borderBottom: hideBorder ? 'none' : rowStyle.borderBottom }}>
-      <span style={{ color: 'rgba(226, 232, 240, 0.85)', fontSize: '13px' }}>{label}</span>
-      <span style={{ color: '#f8fafc', fontSize: '13px', textAlign: 'right' }}>{value}</span>
-    </div>
-  )
-}
-
-function ToggleRow({ label, checked, onChange, hideBorder = false }) {
-  return (
-    <div style={{ ...rowStyle, borderBottom: hideBorder ? 'none' : rowStyle.borderBottom }}>
-      <span style={{ color: 'rgba(226, 232, 240, 0.85)', fontSize: '13px' }}>{label}</span>
-      <button
-        type="button"
-        onClick={onChange}
-        aria-pressed={checked}
-        style={{
-          minWidth: '64px',
-          border: '1px solid rgba(148, 163, 184, 0.35)',
-          borderRadius: '999px',
-          padding: '4px 10px',
-          background: checked ? 'rgba(34, 197, 94, 0.25)' : 'rgba(51, 65, 85, 0.7)',
-          color: checked ? '#22c55e' : '#94a3b8',
-          cursor: 'pointer',
-          fontSize: '12px',
-          fontWeight: 600
-        }}
-      >
-        {checked ? 'ON' : 'OFF'}
+    <div className="list-row" style={{ gridTemplateColumns: 'minmax(0, 1fr) auto' }}>
+      <div>
+        <div className="list-title">{label}</div>
+        <div className="list-copy">{detail}</div>
+      </div>
+      <button type="button" className={`button ${enabled ? '' : 'secondary'}`} onClick={onToggle}>
+        {enabled ? 'Enabled' : 'Disabled'}
       </button>
     </div>
   )
 }
 
-function ActionButton({ active, label, onClick }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        border: `1px solid ${active ? 'rgba(56, 189, 248, 0.55)' : 'rgba(148, 163, 184, 0.35)'}`,
-        borderRadius: '8px',
-        background: active ? 'rgba(56, 189, 248, 0.2)' : 'rgba(15, 23, 42, 0.5)',
-        color: '#e5e7eb',
-        padding: '8px 12px',
-        cursor: 'pointer',
-        fontSize: '13px'
-      }}
-    >
-      {label}
-    </button>
-  )
-}
-
-const Settings = ({ theme, toggleTheme }) => {
-  const [activeTab, setActiveTab] = useState('system')
-  const [displayInfo, setDisplayInfo] = useState({ width: 0, height: 0, colorDepth: 0 })
-  const [uptime, setUptime] = useState('1 min (session)')
-  const [preferences, setPreferences] = useState({
-    notifications: true,
-    animations: true,
-    locationAccess: false,
-    cameraAccess: false
+const Settings = ({ appearance, updateAppearance, systemAPI }) => {
+  const [activeTab, setActiveTab] = useState('appearance')
+  const [preferences, setPreferences] = useState(() => readStorage('settings-preferences', DEFAULT_PREFERENCES))
+  const [displayInfo, setDisplayInfo] = useState({
+    width: 0,
+    height: 0,
+    pixelRatio: 1,
+    language: 'en-US'
   })
+
+  useEffect(() => {
+    writeStorage('settings-preferences', preferences)
+  }, [preferences])
 
   useEffect(() => {
     const updateDisplayInfo = () => {
       setDisplayInfo({
         width: window.innerWidth,
         height: window.innerHeight,
-        colorDepth: window.screen?.colorDepth || 24
+        pixelRatio: window.devicePixelRatio || 1,
+        language: navigator.language || 'en-US'
       })
     }
 
@@ -152,157 +87,218 @@ const Settings = ({ theme, toggleTheme }) => {
     return () => window.removeEventListener('resize', updateDisplayInfo)
   }, [])
 
-  useEffect(() => {
-    const sessionStart = Date.now()
+  const sessionStats = useMemo(() => ([
+    { label: 'Viewport', value: `${displayInfo.width} x ${displayInfo.height}`, note: 'Current browser canvas' },
+    { label: 'Pixel ratio', value: `${displayInfo.pixelRatio.toFixed(2)}x`, note: 'Rendering density' },
+    { label: 'Language', value: displayInfo.language, note: 'Browser locale' },
+    { label: 'Theme', value: appearance.mode, note: `${appearance.accent} accent, ${appearance.wallpaper} scene` }
+  ]), [displayInfo, appearance])
 
-    const updateUptime = () => {
-      const elapsedMinutes = Math.max(1, Math.round((Date.now() - sessionStart) / 60000))
-      setUptime(`${elapsedMinutes} min (session)`)
-    }
-
-    updateUptime()
-    const interval = setInterval(updateUptime, 30000)
-    return () => clearInterval(interval)
-  }, [])
-
-  const setPreference = (key) => {
-    setPreferences(prev => ({ ...prev, [key]: !prev[key] }))
+  const togglePreference = (key) => {
+    setPreferences((prev) => {
+      const nextValue = !prev[key]
+      const next = { ...prev, [key]: nextValue }
+      systemAPI.addNotification('system', `${key} ${nextValue ? 'enabled' : 'disabled'}`, {
+        title: 'Preference updated',
+        duration: 1800
+      })
+      return next
+    })
   }
 
-  const isDark = theme === 'dark'
-  const isCompact = displayInfo.width > 0 && displayInfo.width < 860
-
-  const responsiveShellStyle = {
-    ...shellStyle,
-    gridTemplateColumns: isCompact ? '1fr' : shellStyle.gridTemplateColumns
+  const setThemeMode = (mode) => {
+    updateAppearance({ mode })
+    systemAPI.addNotification('system', `Theme switched to ${mode}`, {
+      title: 'Appearance',
+      duration: 1800
+    })
   }
 
-  const responsiveSidebarStyle = {
-    ...sidebarStyle,
-    borderRight: isCompact ? 'none' : sidebarStyle.borderRight,
-    borderBottom: isCompact ? '1px solid rgba(148, 163, 184, 0.2)' : 'none'
+  const setAccent = (accent) => {
+    updateAppearance({ accent })
+    systemAPI.addNotification('system', `Accent changed to ${accent}`, {
+      title: 'Appearance',
+      duration: 1800
+    })
+  }
+
+  const setWallpaper = (wallpaper) => {
+    updateAppearance({ wallpaper })
+    systemAPI.addNotification('system', `Wallpaper changed to ${wallpaper}`, {
+      title: 'Appearance',
+      duration: 1800
+    })
   }
 
   return (
-    <div style={responsiveShellStyle}>
-      <aside style={responsiveSidebarStyle}>
-        <div style={{ marginBottom: '14px' }}>
-          <div style={{ fontSize: '20px', fontWeight: 700, marginBottom: '6px' }}>Settings</div>
-          <div style={{ fontSize: '12px', color: 'rgba(148, 163, 184, 0.9)' }}>System configuration</div>
+    <div className="app-shell app-shell--split">
+      <aside className="app-sidebar">
+        <div className="app-title-stack" style={{ marginBottom: 18 }}>
+          <div className="app-eyebrow">Control Panel</div>
+          <div className="app-title">Settings</div>
+          <div className="app-subtitle">Tune the shell, check the session, and move around faster.</div>
         </div>
 
-        {NAV_ITEMS.map(item => (
-          <NavButton
-            key={item.id}
-            active={activeTab === item.id}
-            label={item.label}
-            onClick={() => setActiveTab(item.id)}
-          />
-        ))}
+        <div className="stack" style={{ gap: 8, marginBottom: 18 }}>
+          {TABS.map((tab) => (
+            <NavButton
+              key={tab.id}
+              active={activeTab === tab.id}
+              label={tab.label}
+              onClick={() => setActiveTab(tab.id)}
+            />
+          ))}
+        </div>
+
+        <div className="panel">
+          <div className="panel-title">System</div>
+          <div className="panel-body">
+            {SYSTEM_METADATA.name} {SYSTEM_METADATA.version}
+            <br />
+            {SYSTEM_METADATA.tagline}
+          </div>
+        </div>
       </aside>
 
-      <main style={contentStyle}>
-        {activeTab === 'system' && (
-          <>
-            <h2 style={{ margin: '0 0 14px 0', fontSize: '22px' }}>System</h2>
+      <main className="app-main">
+        {activeTab === 'appearance' && (
+          <div className="stack">
+            <div className="metric-grid">
+              {sessionStats.map((stat) => (
+                <div key={stat.label} className="metric-card">
+                  <div className="metric-label">{stat.label}</div>
+                  <div className="metric-value" style={{ fontSize: '20px', margin: '6px 0 8px' }}>{stat.value}</div>
+                  <div className="panel-body">{stat.note}</div>
+                </div>
+              ))}
+            </div>
 
-            <section style={sectionCardStyle}>
-              <h3 style={{ margin: '0 0 8px 0', fontSize: '15px' }}>Device</h3>
-              <InfoRow label="User" value={PROFILE.name} />
-              <InfoRow label="Region" value={PROFILE.location} />
-              <InfoRow label="Session uptime" value={uptime} hideBorder />
-            </section>
+            <div className="panel">
+              <div className="panel-title">Theme mode</div>
+              <div className="panel-body" style={{ marginBottom: 12 }}>
+                Light and dark both use the same layout system. Only the atmosphere changes.
+              </div>
+              <div className="segmented">
+                {['dark', 'light'].map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    className={`segmented-button ${appearance.mode === mode ? 'active' : ''}`}
+                    onClick={() => setThemeMode(mode)}
+                  >
+                    {mode}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-            <section style={sectionCardStyle}>
-              <h3 style={{ margin: '0 0 8px 0', fontSize: '15px' }}>Display</h3>
-              <InfoRow label="Viewport" value={`${displayInfo.width} x ${displayInfo.height}`} />
-              <InfoRow label="Color depth" value={`${displayInfo.colorDepth}-bit`} hideBorder />
-            </section>
+            <div className="panel">
+              <div className="panel-title">Accent palette</div>
+              <div className="chip-row">
+                {ACCENT_OPTIONS.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    className={`button ${appearance.accent === option.id ? '' : 'secondary'}`}
+                    onClick={() => setAccent(option.id)}
+                    style={{ minWidth: 112, justifyContent: 'space-between' }}
+                  >
+                    <span>{option.label}</span>
+                    <span
+                      style={{
+                        width: 14,
+                        height: 14,
+                        borderRadius: 999,
+                        background: option.color,
+                        boxShadow: `0 0 0 1px rgba(255,255,255,0.16), 0 0 18px ${option.color}`
+                      }}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
 
-            <section style={sectionCardStyle}>
-              <h3 style={{ margin: '0 0 8px 0', fontSize: '15px' }}>Behavior</h3>
-              <ToggleRow
-                label="Desktop notifications"
-                checked={preferences.notifications}
-                onChange={() => setPreference('notifications')}
-              />
-              <ToggleRow
-                label="UI animations"
-                checked={preferences.animations}
-                onChange={() => setPreference('animations')}
-                hideBorder
-              />
-            </section>
-          </>
+            <div className="panel">
+              <div className="panel-title">Scene preset</div>
+              <div className="chip-row">
+                {WALLPAPER_OPTIONS.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    className={`button ${appearance.wallpaper === option.id ? '' : 'secondary'}`}
+                    onClick={() => setWallpaper(option.id)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         )}
 
-        {activeTab === 'personalization' && (
-          <>
-            <h2 style={{ margin: '0 0 14px 0', fontSize: '22px' }}>Personalization</h2>
-
-            <section style={sectionCardStyle}>
-              <h3 style={{ margin: '0 0 8px 0', fontSize: '15px' }}>Theme</h3>
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
-                <ActionButton active={isDark} label="Dark" onClick={() => !isDark && toggleTheme()} />
-                <ActionButton active={!isDark} label="Light" onClick={() => isDark && toggleTheme()} />
+        {activeTab === 'workflow' && (
+          <div className="stack">
+            <div className="panel">
+              <div className="panel-title">Preferences</div>
+              <div className="list-table">
+                <PreferenceRow
+                  label="Notifications"
+                  detail="Keeps launch, copy, and state updates visible across the shell."
+                  enabled={preferences.notifications}
+                  onToggle={() => togglePreference('notifications')}
+                />
+                <PreferenceRow
+                  label="Motion bias"
+                  detail="Preserves transitions and feedback cues in the OS surface."
+                  enabled={preferences.motion}
+                  onToggle={() => togglePreference('motion')}
+                />
+                <PreferenceRow
+                  label="Focus mode"
+                  detail="A simple mental toggle for tighter app workflows. Safe to keep experimental."
+                  enabled={preferences.focusMode}
+                  onToggle={() => togglePreference('focusMode')}
+                />
               </div>
-              <InfoRow label="Current theme" value={isDark ? 'Dark' : 'Light'} hideBorder />
-            </section>
+            </div>
 
-            <section style={sectionCardStyle}>
-              <h3 style={{ margin: '0 0 8px 0', fontSize: '15px' }}>Wallpaper</h3>
-              <div style={{ fontSize: '13px', color: 'rgba(226, 232, 240, 0.85)' }}>
-                Wallpaper path is now resolved using runtime base URL for GitHub Pages compatibility.
+            <div className="panel">
+              <div className="panel-title">Quick actions</div>
+              <div className="button-row">
+                <button type="button" className="button" onClick={() => systemAPI.openWindow('Terminal')}>
+                  Open terminal
+                </button>
+                <button type="button" className="button secondary" onClick={() => systemAPI.openWindow('Notes')}>
+                  Open notes
+                </button>
+                <button type="button" className="button secondary" onClick={() => systemAPI.lockSystem()}>
+                  Lock system
+                </button>
               </div>
-            </section>
-          </>
+            </div>
+          </div>
         )}
 
-        {activeTab === 'account' && (
-          <>
-            <h2 style={{ margin: '0 0 14px 0', fontSize: '22px' }}>Account</h2>
+        {activeTab === 'session' && (
+          <div className="stack">
+            <div className="metric-grid">
+              {SYSTEM_METRICS.map((metric) => (
+                <div key={metric.label} className="metric-card">
+                  <div className="metric-label">{metric.label}</div>
+                  <div className="metric-value" style={{ fontSize: '22px', margin: '6px 0 8px' }}>{metric.value}</div>
+                  <div className="panel-body">{metric.note}</div>
+                </div>
+              ))}
+            </div>
 
-            <section style={sectionCardStyle}>
-              <h3 style={{ margin: '0 0 8px 0', fontSize: '15px' }}>Profile</h3>
-              <InfoRow label="Name" value={PROFILE.name} />
-              <InfoRow label="Email" value={PROFILE.email} />
-              <InfoRow label="Phone" value={PROFILE.phone} hideBorder />
-            </section>
-
-            <section style={sectionCardStyle}>
-              <h3 style={{ margin: '0 0 8px 0', fontSize: '15px' }}>Links</h3>
-              <InfoRow label="LinkedIn" value={PROFILE.linkedin} />
-              <InfoRow label="GitHub" value={PROFILE.github} hideBorder />
-            </section>
-          </>
-        )}
-
-        {activeTab === 'privacy' && (
-          <>
-            <h2 style={{ margin: '0 0 14px 0', fontSize: '22px' }}>Privacy</h2>
-
-            <section style={sectionCardStyle}>
-              <h3 style={{ margin: '0 0 8px 0', fontSize: '15px' }}>Permissions</h3>
-              <ToggleRow
-                label="Location access"
-                checked={preferences.locationAccess}
-                onChange={() => setPreference('locationAccess')}
-              />
-              <ToggleRow
-                label="Camera access"
-                checked={preferences.cameraAccess}
-                onChange={() => setPreference('cameraAccess')}
-                hideBorder
-              />
-            </section>
-
-            <section style={sectionCardStyle}>
-              <h3 style={{ margin: '0 0 8px 0', fontSize: '15px' }}>Data</h3>
-              <div style={{ fontSize: '13px', color: 'rgba(226, 232, 240, 0.85)' }}>
-                This portfolio stores no personal data server-side. All state is session-local in the browser.
+            <div className="panel">
+              <div className="panel-title">Session note</div>
+              <div className="panel-body">
+                This rebuild leans into truthful portfolio content. It favors demonstrated capability over invented companies,
+                made-up degrees, or fake production numbers.
               </div>
-            </section>
-          </>
+            </div>
+          </div>
         )}
       </main>
     </div>

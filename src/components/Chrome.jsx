@@ -1,112 +1,238 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react'
+import { BROWSER_PAGES, CONTACT_CHANNELS, PROJECTS, SYSTEM_METADATA } from '../data/portfolio'
 
-const Chrome = () => {
-  const [url, setUrl] = useState('https://www.google.com');
-  const [inputUrl, setInputUrl] = useState('https://www.google.com');
-  const [history, setHistory] = useState(['https://www.google.com']);
-  const [currentIndex, setCurrentIndex] = useState(0);
+function findPage(path) {
+  return BROWSER_PAGES.find((page) => page.path === path)
+}
 
-  const navigate = (newUrl) => {
-    // Clean up the URL
-    let cleanUrl = newUrl.trim();
-    if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
-      cleanUrl = 'https://' + cleanUrl;
+function searchPages(query) {
+  const normalized = query.toLowerCase()
+
+  return BROWSER_PAGES.flatMap((page) => {
+    const haystack = [
+      page.title,
+      page.description,
+      ...page.sections.map((section) => `${section.heading} ${section.body}`)
+    ].join(' ').toLowerCase()
+
+    if (!haystack.includes(normalized)) {
+      return []
     }
 
-    // Remove future history if we're not at the end
-    const newHistory = history.slice(0, currentIndex + 1);
-    newHistory.push(cleanUrl);
+    return [{
+      path: page.path,
+      title: page.title,
+      description: page.description
+    }]
+  })
+}
 
-    setHistory(newHistory);
-    setCurrentIndex(newHistory.length - 1);
-    setUrl(cleanUrl);
-    setInputUrl(cleanUrl);
-  };
+const Chrome = ({ systemAPI }) => {
+  const [history, setHistory] = useState(['/start'])
+  const [historyIndex, setHistoryIndex] = useState(0)
+  const [addressValue, setAddressValue] = useState('/start')
 
-  const goBack = () => {
-    if (currentIndex > 0) {
-      const newIndex = currentIndex - 1;
-      setCurrentIndex(newIndex);
-      const newUrl = history[newIndex];
-      setUrl(newUrl);
-      setInputUrl(newUrl);
+  const currentPath = history[historyIndex]
+  const currentPage = findPage(currentPath)
+
+  const navigate = (target) => {
+    const trimmed = target.trim()
+    if (!trimmed) {
+      return
     }
-  };
 
-  const goForward = () => {
-    if (currentIndex < history.length - 1) {
-      const newIndex = currentIndex + 1;
-      setCurrentIndex(newIndex);
-      const newUrl = history[newIndex];
-      setUrl(newUrl);
-      setInputUrl(newUrl);
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      window.open(trimmed, '_blank', 'noopener,noreferrer')
+      systemAPI.addNotification('system', 'Opened external link in a new tab', {
+        title: 'Navigator',
+        duration: 1800
+      })
+      return
     }
-  };
 
-  const handleGo = () => {
-    navigate(inputUrl);
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      handleGo();
+    if (trimmed.includes('@') && !trimmed.startsWith('/')) {
+      window.location.href = `mailto:${trimmed}`
+      return
     }
-  };
 
-  const canGoBack = currentIndex > 0;
-  const canGoForward = currentIndex < history.length - 1;
+    const page = findPage(trimmed)
+    const nextPath = page ? trimmed : `/search?q=${encodeURIComponent(trimmed)}`
+    const nextHistory = history.slice(0, historyIndex + 1)
+    nextHistory.push(nextPath)
+    setHistory(nextHistory)
+    setHistoryIndex(nextHistory.length - 1)
+    setAddressValue(nextPath)
+  }
+
+  const searchResults = useMemo(() => {
+    if (!currentPath.startsWith('/search?q=')) {
+      return []
+    }
+
+    const query = decodeURIComponent(currentPath.split('=')[1] || '')
+    return searchPages(query)
+  }, [currentPath])
+
+  const pageSections = useMemo(() => {
+    if (currentPage) {
+      return currentPage.sections
+    }
+
+    if (!currentPath.startsWith('/search?q=')) {
+      return []
+    }
+
+    const query = decodeURIComponent(currentPath.split('=')[1] || '')
+    if (!searchResults.length) {
+      return [{
+        heading: 'No local results',
+        body: `No local route matched "${query}". Try /projects, /skills, /contact, /resume, or an external https:// URL.`
+      }]
+    }
+
+    return searchResults.map((result) => ({
+      heading: result.title,
+      body: `${result.description} Route: ${result.path}`
+    }))
+  }, [currentPage, currentPath, searchResults])
 
   return (
-    <div className="chrome-app">
-      <div className="chrome-toolbar">
-        <div className="chrome-nav-buttons">
+    <div className="app-shell">
+      <div className="app-header" style={{ gap: 12 }}>
+        <div className="button-row">
           <button
-            className={`nav-button ${!canGoBack ? 'disabled' : ''}`}
-            onClick={goBack}
-            disabled={!canGoBack}
-            title="Back"
+            type="button"
+            className="button secondary"
+            onClick={() => {
+              if (historyIndex > 0) {
+                const nextIndex = historyIndex - 1
+                setHistoryIndex(nextIndex)
+                setAddressValue(history[nextIndex])
+              }
+            }}
+            disabled={historyIndex === 0}
           >
-            ←
+            Back
           </button>
           <button
-            className={`nav-button ${!canGoForward ? 'disabled' : ''}`}
-            onClick={goForward}
-            disabled={!canGoForward}
-            title="Forward"
+            type="button"
+            className="button secondary"
+            onClick={() => {
+              if (historyIndex < history.length - 1) {
+                const nextIndex = historyIndex + 1
+                setHistoryIndex(nextIndex)
+                setAddressValue(history[nextIndex])
+              }
+            }}
+            disabled={historyIndex >= history.length - 1}
           >
-            →
+            Forward
+          </button>
+          <button
+            type="button"
+            className="button secondary"
+            onClick={() => setAddressValue(currentPath)}
+          >
+            Refresh
           </button>
         </div>
-        <div className="chrome-address-bar">
+
+        <form
+          onSubmit={(event) => {
+            event.preventDefault()
+            navigate(addressValue)
+          }}
+          style={{ flex: 1 }}
+        >
           <input
             type="text"
             className="address-input"
-            value={inputUrl}
-            onChange={(e) => setInputUrl(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Search or enter address"
+            value={addressValue}
+            onChange={(event) => setAddressValue(event.target.value)}
+            placeholder="Enter /projects, /skills, /contact, or an external https:// link"
           />
-          <button className="go-button" onClick={handleGo} title="Go">
-            Go
-          </button>
-        </div>
+        </form>
       </div>
-      <div className="chrome-content">
-        <div className="page-content">
-          <h2>You are visiting:</h2>
-          <div className="current-url">{url}</div>
-          <div className="page-placeholder">
-            <h3>Page Content</h3>
-            <p>This is a simulated browser page for: <strong>{url}</strong></p>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-            <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-            <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+
+      <div className="app-main stack">
+        <div className="chip-row">
+          <button type="button" className="chip" onClick={() => navigate('/start')}>/start</button>
+          <button type="button" className="chip" onClick={() => navigate('/projects')}>/projects</button>
+          <button type="button" className="chip" onClick={() => navigate('/skills')}>/skills</button>
+          <button type="button" className="chip" onClick={() => navigate('/contact')}>/contact</button>
+          <button type="button" className="chip" onClick={() => navigate('/resume')}>/resume</button>
+        </div>
+
+        <div className="panel">
+          <div className="app-title-stack" style={{ marginBottom: 14 }}>
+            <div className="app-eyebrow">Navigator</div>
+            <div className="app-title" style={{ fontSize: '20px' }}>
+              {currentPage?.title || 'Search results'}
+            </div>
+            <div className="app-subtitle">
+              {currentPage?.description || `Local results for ${decodeURIComponent(currentPath.split('=')[1] || '')}`}
+            </div>
+          </div>
+
+          <div className="stack">
+            {pageSections.map((section) => (
+              <div key={section.heading} className="list-row" style={{ gridTemplateColumns: '1fr' }}>
+                <div className="list-title">{section.heading}</div>
+                <div className="list-copy">{section.body}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="metric-grid">
+          <div className="panel">
+            <div className="panel-title">Quick launch</div>
+            <div className="button-row">
+              <button type="button" className="button" onClick={() => systemAPI.openWindow('Projects')}>
+                Open projects
+              </button>
+              <button type="button" className="button secondary" onClick={() => systemAPI.openWindow('Contact')}>
+                Open contact
+              </button>
+              <button type="button" className="button secondary" onClick={() => systemAPI.openWindow('Resume')}>
+                Open resume
+              </button>
+            </div>
+          </div>
+
+          <div className="panel">
+            <div className="panel-title">External routes</div>
+            <div className="stack" style={{ gap: 8 }}>
+              {CONTACT_CHANNELS.filter((channel) => channel.href).map((channel) => (
+                <button
+                  key={channel.label}
+                  type="button"
+                  className="list-row"
+                  style={{ textAlign: 'left' }}
+                  onClick={() => navigate(channel.href)}
+                >
+                  <div>
+                    <div className="list-title">{channel.label}</div>
+                    <div className="list-copy">{channel.value}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="panel">
+            <div className="panel-title">Flagship route</div>
+            <div className="panel-body" style={{ marginBottom: 10 }}>
+              {SYSTEM_METADATA.name} is anchored by {PROJECTS[0].title}.
+            </div>
+            <button type="button" className="button secondary" onClick={() => navigate('/projects')}>
+              Inspect project pages
+            </button>
           </div>
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Chrome;
+export default Chrome
